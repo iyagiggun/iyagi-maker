@@ -16,7 +16,7 @@
   \****************************/
 /***/ ((__unused_webpack_module, exports) => {
 
-eval("\nObject.defineProperty(exports, \"__esModule\", ({ value: true }));\nclass IScene {\n    constructor() {\n        console.error('created!');\n    }\n    hello() {\n        console.error('hello');\n    }\n}\nexports[\"default\"] = IScene;\nconst dd = new IScene();\ndd.hello();\n\n\n//# sourceURL=webpack://iyagi-maker/./src/Scene/index.ts?");
+eval("\nObject.defineProperty(exports, \"__esModule\", ({ value: true }));\nclass IygScene {\n    constructor() {\n        console.error('created!');\n    }\n    hello() {\n        console.error('hello');\n    }\n}\nexports[\"default\"] = IygScene;\n\n\n//# sourceURL=webpack://iyagi-maker/./src/Scene/index.ts?");
 
 /***/ })
 
