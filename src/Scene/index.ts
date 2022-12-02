@@ -1,9 +1,9 @@
-export default class IygScene {
+export default class IGScene {
   constructor() {
-    console.error('created!');
+    console.error('igscene created');
   }
 
   public hello() {
-    console.error('hello');
+    console.error('hello igscene ' );
   }
 }
