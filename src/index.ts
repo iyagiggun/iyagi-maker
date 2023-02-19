@@ -1,8 +1,6 @@
 import Iyagi from './Iyagi';
-import IGObject from './Object';
-import IGScene from './Scene';
+import IObject from './Object';
+import IScene from './Scene';
 
-
-
-export { IGObject, IGScene };
+export { IObject, IScene };
 export default Iyagi;
