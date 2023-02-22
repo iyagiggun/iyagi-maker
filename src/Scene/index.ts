@@ -1,27 +1,30 @@
 import { Container } from 'pixi.js';
-import ITile from '../Object/Tile';
+import { IObject } from '..';
+import ITile, { TILE_SIZE } from '../Object/Tile';
 
 export default class IScene extends Container {
 
-  constructor(private tiles: ITile[][]) {
+  constructor(private tiles: ITile[][], private objectList: IObject[]) {
     super();
-    console.error('igscene created');
-  }
-
-  public hello() {
-    console.error('hello igscene ' );
   }
 
   private load() {
-    return Promise.all([...this.tiles.reduce((acc, item) => acc.concat(item)).map(tile => tile.load())]);
+    return Promise.all([
+      ...this.tiles.reduce((acc, item) => acc.concat(item)).map(tile => tile.load()),
+      ...this.objectList.map((obj) => obj.load())]);
   }
 
-  drawMap(){
+  public drawMap(){
     this.load().then(() => {
       this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-        this.addChild(tile.getSprite());
-        tile.getSprite().x = colIdx * 100;
+        const sprite = tile.getSprite();
+        sprite.x = colIdx * TILE_SIZE;
+        sprite.y = rowIdx * TILE_SIZE;
+        this.addChild(sprite);
       }));
+      this.objectList.forEach((obj) => {
+        this.addChild(obj.getSprite());
+      });
     });
   }
 }
