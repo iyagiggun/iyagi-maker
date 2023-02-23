@@ -1,5 +1,6 @@
 import { Sprite } from 'pixi.js';
 declare type Coords = [x: number, y: number, w: number, h: number];
+declare type Direction = 'up' | 'down' | 'left' | 'right';
 export declare type SpriteInfo = {
     imageUrl: string;
     up?: Coords[];
@@ -21,5 +22,6 @@ export default class IObject {
     private getDirFrames;
     load(): Promise<void>;
     getSprite(): Sprite;
+    changeDirection(direction: Direction): void;
 }
 export {};

@@ -71,7 +71,7 @@ class IObject {
         this.leftS = getSprite(Object.keys(dirFrames.left));
         this.rightS = getSprite(Object.keys(dirFrames.right));
         this.sprite = this.downS;
-        if (!this.sprite) {
+        if (this.sprite === undefined) {
             throw new Error(`Fail to load ${this.name}. No down sprite data.`);
         }
         (_a = this.sprite.visible == this.spriteInfo.visible) !== null && _a !== void 0 ? _a : true;
@@ -81,6 +81,35 @@ class IObject {
             throw new Error(`asset '${this.name}' is not loaded`);
         }
         return this.sprite;
+    }
+    changeDirection(direction) {
+        const lastS = this.sprite;
+        const parent = lastS === null || lastS === void 0 ? void 0 : lastS.parent;
+        let nextS = undefined;
+        switch (direction) {
+            case 'up':
+                nextS = this.upS;
+                break;
+            case 'down':
+                nextS = this.downS;
+                break;
+            case 'left':
+                nextS = this.leftS;
+                break;
+            case 'right':
+                nextS = this.rightS;
+                break;
+            default:
+                throw new Error(`Fail to change ${this.name} dir. Invalid value. ${direction}`);
+        }
+        if (!nextS) {
+            throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
+        }
+        this.sprite = nextS;
+        if (parent) {
+            parent.removeChild(lastS);
+            parent.addChild(this.sprite);
+        }
     }
 }
 exports.default = IObject;

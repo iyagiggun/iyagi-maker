@@ -3,6 +3,7 @@ import { AnimatedSprite, BaseTexture, Sprite, Spritesheet, Texture } from 'pixi.
 const textureMap: { [key: string] : BaseTexture } = {};
 
 type Coords = [x: number, y: number, w: number, h: number];
+type Direction = 'up' | 'down' | 'left' | 'right';
 
 export type SpriteInfo = {
   imageUrl: string;
@@ -95,7 +96,7 @@ export default class IObject {
     this.rightS = getSprite(Object.keys(dirFrames.right));
 
     this.sprite = this.downS;
-    if (!this.sprite) {
+    if (this.sprite === undefined) {
       throw new Error(`Fail to load ${this.name}. No down sprite data.`);
     }
     this.sprite.visible == this.spriteInfo.visible ?? true;
@@ -106,5 +107,35 @@ export default class IObject {
       throw new Error(`asset '${this.name}' is not loaded`);
     }
     return this.sprite;
+  }
+
+  public changeDirection(direction: Direction) {
+    const lastS = this.sprite;
+    const parent = lastS?.parent;
+    let nextS = undefined;
+    switch (direction) {
+    case 'up':
+      nextS = this.upS;
+      break;
+    case 'down':
+      nextS = this.downS;
+      break;
+    case 'left':
+      nextS = this.leftS;
+      break;
+    case 'right':
+      nextS = this.rightS;
+      break;
+    default:
+      throw new Error(`Fail to change ${this.name} dir. Invalid value. ${direction}`);
+    }
+    if (!nextS) {
+      throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
+    }
+    this.sprite = nextS;
+    if (parent) {
+      parent.removeChild(lastS);
+      parent.addChild(this.sprite);
+    }
   }
 }
