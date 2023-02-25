@@ -14,8 +14,10 @@ class Iyagi {
     }
     play(scene) {
         this.app.stage.removeChildren();
-        this.app.stage.addChild(scene);
-        scene.drawMap();
+        scene.load().then(() => {
+            scene.drawMap();
+            this.app.stage.addChild(scene);
+        });
     }
 }
 exports.default = Iyagi;

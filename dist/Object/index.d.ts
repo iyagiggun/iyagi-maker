@@ -18,6 +18,7 @@ export default class IObject {
     private rightS;
     private sprite;
     constructor(name: string, spriteInfo: SpriteInfo);
+    getName(): string;
     private getTexture;
     private getDirFrames;
     load(): Promise<void>;

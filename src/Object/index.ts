@@ -51,6 +51,10 @@ export default class IObject {
   constructor(private name: string, private spriteInfo: SpriteInfo) {
   }
 
+  public getName() {
+    return this.name;
+  }
+
   private getTexture() {
     const imageUrl = this.spriteInfo.imageUrl;
     if (!textureMap[imageUrl]) {
@@ -97,7 +101,7 @@ export default class IObject {
 
     this.sprite = this.downS;
     if (this.sprite === undefined) {
-      throw new Error(`Fail to load ${this.name}. No down sprite data.`);
+      throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
     }
     this.sprite.visible == this.spriteInfo.visible ?? true;
   }
@@ -110,29 +114,27 @@ export default class IObject {
   }
 
   public changeDirection(direction: Direction) {
-    const lastS = this.sprite;
-    const parent = lastS?.parent;
-    let nextS = undefined;
+    const lastS = this.getSprite();
+    const parent = lastS.parent;
     switch (direction) {
     case 'up':
-      nextS = this.upS;
+      this.sprite = this.upS;
       break;
     case 'down':
-      nextS = this.downS;
+      this.sprite = this.downS;
       break;
     case 'left':
-      nextS = this.leftS;
+      this.sprite = this.leftS;
       break;
     case 'right':
-      nextS = this.rightS;
+      this.sprite = this.rightS;
       break;
     default:
-      throw new Error(`Fail to change ${this.name} dir. Invalid value. ${direction}`);
+      throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
     }
-    if (!nextS) {
+    if (!this.sprite) {
       throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
     }
-    this.sprite = nextS;
     if (parent) {
       parent.removeChild(lastS);
       parent.addChild(this.sprite);

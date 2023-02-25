@@ -29,6 +29,9 @@ class IObject {
         this.name = name;
         this.spriteInfo = spriteInfo;
     }
+    getName() {
+        return this.name;
+    }
     getTexture() {
         const imageUrl = this.spriteInfo.imageUrl;
         if (!textureMap[imageUrl]) {
@@ -72,7 +75,7 @@ class IObject {
         this.rightS = getSprite(Object.keys(dirFrames.right));
         this.sprite = this.downS;
         if (this.sprite === undefined) {
-            throw new Error(`Fail to load ${this.name}. No down sprite data.`);
+            throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
         }
         (_a = this.sprite.visible == this.spriteInfo.visible) !== null && _a !== void 0 ? _a : true;
     }
@@ -83,29 +86,27 @@ class IObject {
         return this.sprite;
     }
     changeDirection(direction) {
-        const lastS = this.sprite;
-        const parent = lastS === null || lastS === void 0 ? void 0 : lastS.parent;
-        let nextS = undefined;
+        const lastS = this.getSprite();
+        const parent = lastS.parent;
         switch (direction) {
             case 'up':
-                nextS = this.upS;
+                this.sprite = this.upS;
                 break;
             case 'down':
-                nextS = this.downS;
+                this.sprite = this.downS;
                 break;
             case 'left':
-                nextS = this.leftS;
+                this.sprite = this.leftS;
                 break;
             case 'right':
-                nextS = this.rightS;
+                this.sprite = this.rightS;
                 break;
             default:
-                throw new Error(`Fail to change ${this.name} dir. Invalid value. ${direction}`);
+                throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
         }
-        if (!nextS) {
+        if (!this.sprite) {
             throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
         }
-        this.sprite = nextS;
         if (parent) {
             parent.removeChild(lastS);
             parent.addChild(this.sprite);
