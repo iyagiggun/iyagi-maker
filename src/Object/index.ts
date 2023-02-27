@@ -1,4 +1,5 @@
 import { AnimatedSprite, BaseTexture, Sprite, Spritesheet, Texture } from 'pixi.js';
+import { FRAMES_PER_SECOND } from '../Constant';
 
 const textureMap: { [key: string] : BaseTexture } = {};
 
@@ -36,6 +37,13 @@ const getSprite = (frameKeyList: string[]) => {
     return new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
   }
   return undefined;
+};
+
+const getDirection = (deltaX: number, deltaY: number) => {
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    return deltaX > 0 ? 'right' : 'left';
+  }
+  return deltaY > 0 ? 'down' : 'up';
 };
 
 export default class IObject {
@@ -113,9 +121,33 @@ export default class IObject {
     return this.sprite;
   }
 
+  public getWidth() {
+    return this.getSprite().width;
+  }
+
+  public getHeight() {
+    return this.getSprite().height;
+  }
+
+  public getPos() {
+    const {x, y} = this.getSprite();
+    return [x, y];
+  }
+
+  public setPos(x: number, y: number) {
+    this.getSprite().x = x;
+    this.getSprite().y = y;
+  }
+
+  public changeDirectionWithDelta(deltaX: number, deltaY: number) {
+    this.changeDirection(getDirection(deltaX, deltaY));
+
+  }
+
   public changeDirection(direction: Direction) {
-    const lastS = this.getSprite();
-    const parent = lastS.parent;
+    const lastSprite = this.getSprite();
+    const [lastX, lastY] = this.getPos();
+    const parent = lastSprite.parent;
     switch (direction) {
     case 'up':
       this.sprite = this.upS;
@@ -135,9 +167,33 @@ export default class IObject {
     if (!this.sprite) {
       throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
     }
+    this.setPos(lastX, lastY);
     if (parent) {
-      parent.removeChild(lastS);
+      parent.removeChild(lastSprite);
       parent.addChild(this.sprite);
     }
+  }
+
+  public play(_speed: number) {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      return;
+    }
+    if (!sprite.playing) {
+      sprite.play();
+    }
+    const speed = (_speed * 6) / FRAMES_PER_SECOND;
+    if (sprite.animationSpeed === speed) {
+      return;
+    }
+    sprite.animationSpeed = speed;
+  }
+
+  public stop() {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      return;
+    }
+    sprite.stop();
   }
 }

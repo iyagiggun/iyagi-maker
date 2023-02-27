@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const pixi_js_1 = require("pixi.js");
+const Constant_1 = require("../Constant");
 const textureMap = {};
 const coordsListToFrame = (prefix) => (coordsList) => {
     if (!coordsList) {
@@ -23,6 +24,12 @@ const getSprite = (frameKeyList) => {
         return new pixi_js_1.AnimatedSprite(frameKeyList.map((key) => pixi_js_1.Texture.from(key)));
     }
     return undefined;
+};
+const getDirection = (deltaX, deltaY) => {
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        return deltaX > 0 ? 'right' : 'left';
+    }
+    return deltaY > 0 ? 'down' : 'up';
 };
 class IObject {
     constructor(name, spriteInfo) {
@@ -85,9 +92,27 @@ class IObject {
         }
         return this.sprite;
     }
+    getWidth() {
+        return this.getSprite().width;
+    }
+    getHeight() {
+        return this.getSprite().height;
+    }
+    getPos() {
+        const { x, y } = this.getSprite();
+        return [x, y];
+    }
+    setPos(x, y) {
+        this.getSprite().x = x;
+        this.getSprite().y = y;
+    }
+    changeDirectionWithDelta(deltaX, deltaY) {
+        this.changeDirection(getDirection(deltaX, deltaY));
+    }
     changeDirection(direction) {
-        const lastS = this.getSprite();
-        const parent = lastS.parent;
+        const lastSprite = this.getSprite();
+        const [lastX, lastY] = this.getPos();
+        const parent = lastSprite.parent;
         switch (direction) {
             case 'up':
                 this.sprite = this.upS;
@@ -107,10 +132,32 @@ class IObject {
         if (!this.sprite) {
             throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
         }
+        this.setPos(lastX, lastY);
         if (parent) {
-            parent.removeChild(lastS);
+            parent.removeChild(lastSprite);
             parent.addChild(this.sprite);
         }
+    }
+    play(_speed) {
+        const sprite = this.getSprite();
+        if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
+            return;
+        }
+        if (!sprite.playing) {
+            sprite.play();
+        }
+        const speed = (_speed * 6) / Constant_1.FRAMES_PER_SECOND;
+        if (sprite.animationSpeed === speed) {
+            return;
+        }
+        sprite.animationSpeed = speed;
+    }
+    stop() {
+        const sprite = this.getSprite();
+        if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
+            return;
+        }
+        sprite.stop();
     }
 }
 exports.default = IObject;

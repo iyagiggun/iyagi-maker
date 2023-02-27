@@ -23,6 +23,13 @@ export default class IObject {
     private getDirFrames;
     load(): Promise<void>;
     getSprite(): Sprite;
+    getWidth(): number;
+    getHeight(): number;
+    getPos(): number[];
+    setPos(x: number, y: number): void;
+    changeDirectionWithDelta(deltaX: number, deltaY: number): void;
     changeDirection(direction: Direction): void;
+    play(_speed: number): void;
+    stop(): void;
 }
 export {};

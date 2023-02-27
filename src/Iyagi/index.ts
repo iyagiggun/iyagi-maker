@@ -21,6 +21,7 @@ class Iyagi {
   play(scene: IScene) {
     this.app.stage.removeChildren();
     scene.load().then(() => {
+      scene.setApplication(this.app);
       scene.drawMap();
       this.app.stage.addChild(scene);
     });

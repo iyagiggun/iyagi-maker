@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/oneis0/iyagi-maker#readme",
   "devDependencies": {
+    "@types/lodash-es": "^4.17.6",
     "@typescript-eslint/eslint-plugin": "^5.36.2",
     "@typescript-eslint/parser": "^5.36.2",
     "eslint": "^8.34.0",
@@ -24,6 +25,7 @@
   },
   "dependencies": {
     "events": "^3.3.0",
+    "lodash-es": "^4.17.21",
     "pixi.js": "^7.1.3"
   }
 }
