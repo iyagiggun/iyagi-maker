@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const pixi_js_1 = require("pixi.js");
+const Event_1 = __importDefault(require("../Scene/Event"));
 class Iyagi {
     constructor(canvas) {
         this.width = parseInt(getComputedStyle(canvas).width);
@@ -17,7 +21,8 @@ class Iyagi {
         scene.load().then(() => {
             scene.setApplication(this.app);
             scene.drawMap();
-            this.app.stage.addChild(scene);
+            this.app.stage.addChild(scene.getContainer());
+            scene.dispatchEvent(new Event_1.default('start'));
         });
     }
 }

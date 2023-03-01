@@ -1,5 +1,6 @@
 import { Application } from 'pixi.js';
 import IScene from '../Scene';
+import ISceneEvent from '../Scene/Event';
 
 class Iyagi {
 
@@ -23,7 +24,8 @@ class Iyagi {
     scene.load().then(() => {
       scene.setApplication(this.app);
       scene.drawMap();
-      this.app.stage.addChild(scene);
+      this.app.stage.addChild(scene.getContainer());
+      scene.dispatchEvent(new ISceneEvent('start'));
     });
   }
 }

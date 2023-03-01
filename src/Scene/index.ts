@@ -3,6 +3,8 @@ import { Application, Container, Sprite } from 'pixi.js';
 import { IObject } from '..';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
+import ISceneEvent, { ISceneEventType } from './Event';
+
 
 const getAcc = (distance: number): 0 | 1 | 2 | 3 => {
   if (distance < 24) {
@@ -17,18 +19,32 @@ const getAcc = (distance: number): 0 | 1 | 2 | 3 => {
   return 3;
 };
 
-export default class IScene extends Container {
+export default class IScene extends EventTarget {
 
+  private container: Container;
+  private width: number;
+  private height: number;
   private app?: Application;
   private controller?: Sprite;
 
-  constructor(name: string, private tiles: ITile[][], private objectList: IObject[]) {
+  constructor(private name: string, private tiles: ITile[][], private objectList: IObject[]) {
     super();
-    this.name = name;
+    this.container = new Container();
+    this.width = 0;
+    this.height = 0;
   }
 
-  public setApplication(app: Application) {
-    this.app = app;
+  public getContainer() {
+    return this.container;
+  }
+
+  public addEventListener(type: ISceneEventType, callback: () => void) {
+    super.addEventListener(type, callback);
+  }
+
+  public dispatchEvent(event: ISceneEvent) {
+    super.dispatchEvent(event);
+    return true;
   }
 
   private getApplication() {
@@ -36,6 +52,10 @@ export default class IScene extends Container {
       throw new Error(`[scene: ${this.name}] no application.`);
     }
     return this.app;
+  }
+
+  public setApplication(app: Application) {
+    this.app = app;
   }
 
   public load() {
@@ -49,15 +69,23 @@ export default class IScene extends Container {
       const sprite = tile.getSprite();
       sprite.x = colIdx * TILE_SIZE;
       sprite.y = rowIdx * TILE_SIZE;
-      this.addChild(sprite);
+      this.container.addChild(sprite);
     }));
+    this.width = this.container.width;
+    this.height = this.container.height;
     this.objectList.forEach((obj) => {
-      this.addChild(obj.getSprite());
+      this.container.addChild(obj.getSprite());
     });
   }
 
-  private interact() {
-    console.error('interact!!');
+  private getFocusPos(target: IObject) {
+    const [targetX, targetY] = target.getPos();
+    const { width: appWidth, height: appHeight } = this.getApplication().view;
+    const minX = this.getApplication().view.width - this.width;
+    const minY = this.getApplication().view.height- this.height;
+    const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
+    const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
+    return [Math.max(Math.min(destX, 0), minX), Math.max(Math.min(destY, 0), minY)];
   }
 
   public controll(target: IObject) {
@@ -74,12 +102,12 @@ export default class IScene extends Container {
 
       const ticker = this.getApplication().ticker;
       const tick = () => {
-        const [curX, curY] = target.getPos();
         const nextX = this.getObjectNextX(target, deltaX);
         const nextY = this.getObjectNextY(target, deltaY);
-        this.x += curX - nextX;
-        this.y += curY - nextY;
         target.setPos(nextX, nextY);
+        const [x, y] = this.getFocusPos(target);
+        this.container.x = x;
+        this.container.y = y;
       };
 
       this.controller.addEventListener('touchstart', (evt) => {
@@ -124,7 +152,10 @@ export default class IScene extends Container {
         ticker.remove(tick);
       });
 
-      this.parent.addChild(this.controller);
+      this.container.parent.addChild(this.controller);
+      const [x, y] = this.getFocusPos(target);
+      this.container.x = x;
+      this.container.y = y;
     }
   }
 
@@ -133,6 +164,10 @@ export default class IScene extends Container {
     const width = obj.getWidth();
     const height = obj.getHeight();
     const nextX = curX + dist;
+    // map out check
+    if (nextX < 0 || nextX + width > this.width) {
+      return curX;
+    }
 
     // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
     //   .find((target) => {
@@ -159,6 +194,11 @@ export default class IScene extends Container {
     const height = obj.getHeight();
     const nextY = curY + dist;
 
+    // map out check
+    if (nextY < 0 || nextY + height > this.height) {
+      return curY;
+    }
+
     // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
     //   .find((target) => {
     //     if (target === obj) {
@@ -176,6 +216,10 @@ export default class IScene extends Container {
     // }
     // const blockingObjY = blockingObj.getPos().y;
     // return curY < blockingObjY ? blockingObjY - width : blockingObjY + blockingObj.getHeight();
+  }
+
+  private interact() {
+    console.error('interact!!');
   }
 
 }

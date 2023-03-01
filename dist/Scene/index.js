@@ -19,21 +19,34 @@ const getAcc = (distance) => {
     }
     return 3;
 };
-class IScene extends pixi_js_1.Container {
+class IScene extends EventTarget {
     constructor(name, tiles, objectList) {
         super();
+        this.name = name;
         this.tiles = tiles;
         this.objectList = objectList;
-        this.name = name;
+        this.container = new pixi_js_1.Container();
+        this.width = 0;
+        this.height = 0;
     }
-    setApplication(app) {
-        this.app = app;
+    getContainer() {
+        return this.container;
+    }
+    addEventListener(type, callback) {
+        super.addEventListener(type, callback);
+    }
+    dispatchEvent(event) {
+        super.dispatchEvent(event);
+        return true;
     }
     getApplication() {
         if (!this.app) {
             throw new Error(`[scene: ${this.name}] no application.`);
         }
         return this.app;
+    }
+    setApplication(app) {
+        this.app = app;
     }
     load() {
         return Promise.all([
@@ -46,14 +59,22 @@ class IScene extends pixi_js_1.Container {
             const sprite = tile.getSprite();
             sprite.x = colIdx * Tile_1.TILE_SIZE;
             sprite.y = rowIdx * Tile_1.TILE_SIZE;
-            this.addChild(sprite);
+            this.container.addChild(sprite);
         }));
+        this.width = this.container.width;
+        this.height = this.container.height;
         this.objectList.forEach((obj) => {
-            this.addChild(obj.getSprite());
+            this.container.addChild(obj.getSprite());
         });
     }
-    interact() {
-        console.error('interact!!');
+    getFocusPos(target) {
+        const [targetX, targetY] = target.getPos();
+        const { width: appWidth, height: appHeight } = this.getApplication().view;
+        const minX = this.getApplication().view.width - this.width;
+        const minY = this.getApplication().view.height - this.height;
+        const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
+        const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
+        return [Math.max(Math.min(destX, 0), minX), Math.max(Math.min(destY, 0), minY)];
     }
     controll(target) {
         if (!this.controller) {
@@ -67,12 +88,12 @@ class IScene extends pixi_js_1.Container {
             this.controller.interactive = true;
             const ticker = this.getApplication().ticker;
             const tick = () => {
-                const [curX, curY] = target.getPos();
                 const nextX = this.getObjectNextX(target, deltaX);
                 const nextY = this.getObjectNextY(target, deltaY);
-                this.x += curX - nextX;
-                this.y += curY - nextY;
                 target.setPos(nextX, nextY);
+                const [x, y] = this.getFocusPos(target);
+                this.container.x = x;
+                this.container.y = y;
             };
             this.controller.addEventListener('touchstart', (evt) => {
                 const { x, y } = evt.global;
@@ -114,7 +135,10 @@ class IScene extends pixi_js_1.Container {
                 target.stop();
                 ticker.remove(tick);
             });
-            this.parent.addChild(this.controller);
+            this.container.parent.addChild(this.controller);
+            const [x, y] = this.getFocusPos(target);
+            this.container.x = x;
+            this.container.y = y;
         }
     }
     getObjectNextX(obj, dist) {
@@ -122,6 +146,10 @@ class IScene extends pixi_js_1.Container {
         const width = obj.getWidth();
         const height = obj.getHeight();
         const nextX = curX + dist;
+        // map out check
+        if (nextX < 0 || nextX + width > this.width) {
+            return curX;
+        }
         // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
         //   .find((target) => {
         //     if (target === obj) {
@@ -144,6 +172,10 @@ class IScene extends pixi_js_1.Container {
         const width = obj.getWidth();
         const height = obj.getHeight();
         const nextY = curY + dist;
+        // map out check
+        if (nextY < 0 || nextY + height > this.height) {
+            return curY;
+        }
         // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
         //   .find((target) => {
         //     if (target === obj) {
@@ -160,6 +192,9 @@ class IScene extends pixi_js_1.Container {
         // }
         // const blockingObjY = blockingObj.getPos().y;
         // return curY < blockingObjY ? blockingObjY - width : blockingObjY + blockingObj.getHeight();
+    }
+    interact() {
+        console.error('interact!!');
     }
 }
 exports.default = IScene;
