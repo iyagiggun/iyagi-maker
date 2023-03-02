@@ -5,6 +5,12 @@ import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
 import ISceneEvent, { ISceneEventType } from './Event';
 
+const DEFAULT_MARGIN = 30;
+
+type SceneInfo = {
+  margin: number;
+}
+
 /**
  * 반드시 a1 <= a2 이고, b1 <=  b2 여야함. (이게 맞지 않으면 제대로 체크되지 않음)
  * @return {boolean} 1차원 공간에서 직선 2개가 겹치는지 여부
@@ -61,15 +67,18 @@ export default class IScene extends EventTarget {
   private width: number;
   private height: number;
   private app?: Application;
+  private margin: number;
   private controller?: Sprite;
   private blockingObjectList: IObject[];
 
-  constructor(private name: string, private tiles: ITile[][], private objectList: IObject[]) {
+  constructor(private name: string, private tiles: ITile[][], private objectList: IObject[], info?: SceneInfo) {
     super();
     this.container = new Container();
+    this.container.sortableChildren = true;
     this.width = 0;
     this.height = 0;
     this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
+    this.margin = info?.margin ?? DEFAULT_MARGIN;
   }
 
   public getContainer() {
@@ -119,11 +128,11 @@ export default class IScene extends EventTarget {
   private getFocusPos(target: IObject) {
     const [targetX, targetY] = target.getPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
-    const minX = this.getApplication().view.width - this.width;
-    const minY = this.getApplication().view.height- this.height;
+    const minX = this.getApplication().view.width - this.width - this.margin;
+    const minY = this.getApplication().view.height- this.height - this.margin;
     const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
     const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-    return [Math.max(Math.min(destX, 0), minX), Math.max(Math.min(destY, 0), minY)];
+    return [Math.max(Math.min(destX, this.margin), minX), Math.max(Math.min(destY, this.margin), minY)];
   }
 
   public controll(target: IObject) {

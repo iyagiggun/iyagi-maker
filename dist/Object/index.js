@@ -32,30 +32,38 @@ const getDirection = (deltaX, deltaY) => {
     return deltaY > 0 ? 'down' : 'up';
 };
 class IObject {
-    constructor(name, spriteInfo) {
+    constructor(name, objInfo) {
+        var _a;
         this.name = name;
-        this.spriteInfo = spriteInfo;
+        this.objInfo = objInfo;
+        this.xDiff = 0;
+        this.yDiff = 0;
+        this.passable = (_a = objInfo.passable) !== null && _a !== void 0 ? _a : false;
     }
     getName() {
         return this.name;
     }
+    isPassable() {
+        return this.passable;
+    }
     getTexture() {
-        const imageUrl = this.spriteInfo.imageUrl;
+        const imageUrl = this.objInfo.imageUrl;
         if (!textureMap[imageUrl]) {
             textureMap[imageUrl] = pixi_js_1.BaseTexture.from(imageUrl);
         }
         return textureMap[imageUrl];
     }
     getDirFrames() {
+        var _a, _b, _c;
         return {
-            up: coordsListToFrame(`${this.name}-up`)(this.spriteInfo.up),
-            down: coordsListToFrame(`${this.name}-down`)(this.spriteInfo.down),
-            left: coordsListToFrame(`${this.name}-left`)(this.spriteInfo.left),
-            right: coordsListToFrame(`${this.name}-right`)(this.spriteInfo.right)
+            up: coordsListToFrame(`${this.name}-up`)((_a = this.objInfo.up) === null || _a === void 0 ? void 0 : _a.coordsList),
+            down: coordsListToFrame(`${this.name}-down`)(this.objInfo.down.coordsList),
+            left: coordsListToFrame(`${this.name}-left`)((_b = this.objInfo.left) === null || _b === void 0 ? void 0 : _b.coordsList),
+            right: coordsListToFrame(`${this.name}-right`)((_c = this.objInfo.right) === null || _c === void 0 ? void 0 : _c.coordsList)
         };
     }
     async load() {
-        var _a;
+        var _a, _b, _c;
         // case: loaded
         if (this.sprite) {
             return Promise.resolve();
@@ -84,7 +92,10 @@ class IObject {
         if (this.sprite === undefined) {
             throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
         }
-        (_a = this.sprite.visible == this.spriteInfo.visible) !== null && _a !== void 0 ? _a : true;
+        (_a = this.sprite.visible == this.objInfo.visible) !== null && _a !== void 0 ? _a : true;
+        this.xDiff = (_b = this.objInfo.down.xDiff) !== null && _b !== void 0 ? _b : 0;
+        this.yDiff = (_c = this.objInfo.down.yDiff) !== null && _c !== void 0 ? _c : 0;
+        this.setPos(0, 0);
     }
     getSprite() {
         if (!this.sprite) {
@@ -93,38 +104,49 @@ class IObject {
         return this.sprite;
     }
     getWidth() {
-        return this.getSprite().width;
+        return this.getSprite().width + this.xDiff;
     }
     getHeight() {
-        return this.getSprite().height;
+        return this.getSprite().height + this.yDiff;
     }
     getPos() {
         const { x, y } = this.getSprite();
-        return [x, y];
+        return [x - this.xDiff, y - this.yDiff];
     }
     setPos(x, y) {
-        this.getSprite().x = x;
-        this.getSprite().y = y;
+        const sprite = this.getSprite();
+        sprite.x = x + this.xDiff;
+        sprite.y = y + this.yDiff;
+        sprite.zIndex = y;
     }
     changeDirectionWithDelta(deltaX, deltaY) {
         this.changeDirection(getDirection(deltaX, deltaY));
     }
     changeDirection(direction) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const lastSprite = this.getSprite();
         const [lastX, lastY] = this.getPos();
         const parent = lastSprite.parent;
         switch (direction) {
             case 'up':
                 this.sprite = this.upS;
+                this.xDiff = (_b = (_a = this.objInfo.up) === null || _a === void 0 ? void 0 : _a.xDiff) !== null && _b !== void 0 ? _b : 0;
+                this.yDiff = (_d = (_c = this.objInfo.up) === null || _c === void 0 ? void 0 : _c.yDiff) !== null && _d !== void 0 ? _d : 0;
                 break;
             case 'down':
                 this.sprite = this.downS;
+                this.xDiff = (_e = this.objInfo.down.xDiff) !== null && _e !== void 0 ? _e : 0;
+                this.yDiff = (_f = this.objInfo.down.yDiff) !== null && _f !== void 0 ? _f : 0;
                 break;
             case 'left':
                 this.sprite = this.leftS;
+                this.xDiff = (_h = (_g = this.objInfo.left) === null || _g === void 0 ? void 0 : _g.xDiff) !== null && _h !== void 0 ? _h : 0;
+                this.yDiff = (_k = (_j = this.objInfo.left) === null || _j === void 0 ? void 0 : _j.yDiff) !== null && _k !== void 0 ? _k : 0;
                 break;
             case 'right':
                 this.sprite = this.rightS;
+                this.xDiff = (_m = (_l = this.objInfo.right) === null || _l === void 0 ? void 0 : _l.xDiff) !== null && _m !== void 0 ? _m : 0;
+                this.yDiff = (_p = (_o = this.objInfo.right) === null || _o === void 0 ? void 0 : _o.yDiff) !== null && _p !== void 0 ? _p : 0;
                 break;
             default:
                 throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);

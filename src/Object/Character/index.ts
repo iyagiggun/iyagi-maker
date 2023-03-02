@@ -1,8 +1,8 @@
-import { SpriteInfo } from '..';
+import { IObjectInfo } from '..';
 import { IObject } from '../..';
 
 export default class ICharacter extends IObject {
-  constructor(name: string, spriteInfo: SpriteInfo) {
-    super(name, spriteInfo);
+  constructor(name: string, objInfo: IObjectInfo) {
+    super(name, objInfo);
   }
 }

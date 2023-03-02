@@ -4,14 +4,20 @@ import { FRAMES_PER_SECOND } from '../Constant';
 const textureMap: { [key: string] : BaseTexture } = {};
 
 type Coords = [x: number, y: number, w: number, h: number];
+type SpriteInfo = {
+  coordsList: Coords[];
+  xDiff?: number;
+  yDiff?: number;
+}
+
 type Direction = 'up' | 'down' | 'left' | 'right';
 
-export type SpriteInfo = {
+export type IObjectInfo = {
   imageUrl: string;
-  up?: Coords[];
-  down: Coords[];
-  left?: Coords[];
-  right?: Coords[];
+  up?: SpriteInfo;
+  down: SpriteInfo;
+  left?: SpriteInfo;
+  right?: SpriteInfo;
   visible?: boolean;
   passable?: boolean;
 }
@@ -48,19 +54,20 @@ const getDirection = (deltaX: number, deltaY: number) => {
 };
 
 export default class IObject {
+  // 현재 sprite. load 후 값이 세팅 됨 - loaded 판단할 때 사용
+  private sprite: Sprite | undefined;
 
   private upS: Sprite | undefined;
   private downS: Sprite | undefined;
   private leftS: Sprite | undefined;
   private rightS: Sprite | undefined;
 
-  // load 시 값이 세팅 됨 - loaded 판단할 때 사용
-  private sprite: Sprite | undefined;
-
   private passable: boolean;
+  private xDiff = 0;
+  private yDiff = 0;
 
-  constructor(private name: string, private spriteInfo: SpriteInfo) {
-    this.passable = spriteInfo.passable ?? false;
+  constructor(private name: string, private objInfo: IObjectInfo) {
+    this.passable = objInfo.passable ?? false;
   }
 
   public getName() {
@@ -72,7 +79,7 @@ export default class IObject {
   }
 
   private getTexture() {
-    const imageUrl = this.spriteInfo.imageUrl;
+    const imageUrl = this.objInfo.imageUrl;
     if (!textureMap[imageUrl]) {
       textureMap[imageUrl] = BaseTexture.from(imageUrl);
     }
@@ -81,10 +88,10 @@ export default class IObject {
 
   private getDirFrames() {
     return {
-      up: coordsListToFrame(`${this.name}-up`)(this.spriteInfo.up),
-      down: coordsListToFrame(`${this.name}-down`)(this.spriteInfo.down),
-      left: coordsListToFrame(`${this.name}-left`)(this.spriteInfo.left),
-      right: coordsListToFrame(`${this.name}-right`)(this.spriteInfo.right)
+      up: coordsListToFrame(`${this.name}-up`)(this.objInfo.up?.coordsList),
+      down: coordsListToFrame(`${this.name}-down`)(this.objInfo.down.coordsList),
+      left: coordsListToFrame(`${this.name}-left`)(this.objInfo.left?.coordsList),
+      right: coordsListToFrame(`${this.name}-right`)(this.objInfo.right?.coordsList)
     };
   }
 
@@ -119,7 +126,10 @@ export default class IObject {
     if (this.sprite === undefined) {
       throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
     }
-    this.sprite.visible == this.spriteInfo.visible ?? true;
+    this.sprite.visible == this.objInfo.visible ?? true;
+    this.xDiff = this.objInfo.down.xDiff ?? 0;
+    this.yDiff = this.objInfo.down.yDiff ?? 0;
+    this.setPos(0, 0);
   }
 
   public getSprite() {
@@ -130,21 +140,23 @@ export default class IObject {
   }
 
   public getWidth() {
-    return this.getSprite().width;
+    return this.getSprite().width + this.xDiff;
   }
 
   public getHeight() {
-    return this.getSprite().height;
+    return this.getSprite().height + this.yDiff;
   }
 
   public getPos() {
     const {x, y} = this.getSprite();
-    return [x, y];
+    return [x - this.xDiff, y - this.yDiff];
   }
 
   public setPos(x: number, y: number) {
-    this.getSprite().x = x;
-    this.getSprite().y = y;
+    const sprite = this.getSprite();
+    sprite.x = x + this.xDiff;
+    sprite.y = y + this.yDiff;
+    sprite.zIndex = y;
   }
 
   public changeDirectionWithDelta(deltaX: number, deltaY: number) {
@@ -159,15 +171,23 @@ export default class IObject {
     switch (direction) {
     case 'up':
       this.sprite = this.upS;
+      this.xDiff = this.objInfo.up?.xDiff ?? 0;
+      this.yDiff = this.objInfo.up?.yDiff ?? 0;
       break;
     case 'down':
       this.sprite = this.downS;
+      this.xDiff = this.objInfo.down.xDiff ?? 0;
+      this.yDiff = this.objInfo.down.yDiff ?? 0;
       break;
     case 'left':
       this.sprite = this.leftS;
+      this.xDiff = this.objInfo.left?.xDiff ?? 0;
+      this.yDiff = this.objInfo.left?.yDiff ?? 0;
       break;
     case 'right':
       this.sprite = this.rightS;
+      this.xDiff = this.objInfo.right?.xDiff ?? 0;
+      this.yDiff = this.objInfo.right?.yDiff ?? 0;
       break;
     default:
       throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
