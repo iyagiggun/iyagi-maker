@@ -5,6 +5,42 @@ import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
 import ISceneEvent, { ISceneEventType } from './Event';
 
+/**
+ * 반드시 a1 <= a2 이고, b1 <=  b2 여야함. (이게 맞지 않으면 제대로 체크되지 않음)
+ * @return {boolean} 1차원 공간에서 직선 2개가 겹치는지 여부
+ */
+const isOverlapIn1D = (
+  a1: number,
+  a2: number,
+  b1: number,
+  b2: number,
+): boolean => {
+  if (a2 <= b1 || a1 >= b2) {
+    return false;
+  }
+  return true;
+};
+
+const isIntersecting = (
+  x1: number,
+  y1: number,
+  width1: number,
+  height1: number,
+  x2: number,
+  y2: number,
+  width2: number,
+  height2: number,
+) => isOverlapIn1D(
+  x1,
+  x1 + width1,
+  x2,
+  x2 + width2,
+) && isOverlapIn1D(
+  y1,
+  y1 + height1,
+  y2,
+  y2 + height2,
+);
 
 const getAcc = (distance: number): 0 | 1 | 2 | 3 => {
   if (distance < 24) {
@@ -26,12 +62,14 @@ export default class IScene extends EventTarget {
   private height: number;
   private app?: Application;
   private controller?: Sprite;
+  private blockingObjectList: IObject[];
 
   constructor(private name: string, private tiles: ITile[][], private objectList: IObject[]) {
     super();
     this.container = new Container();
     this.width = 0;
     this.height = 0;
+    this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
   }
 
   public getContainer() {
@@ -159,63 +197,58 @@ export default class IScene extends EventTarget {
     }
   }
 
-  private getObjectNextX(obj: IObject, dist: number) {
-    const [curX, curY] = obj.getPos();
-    const width = obj.getWidth();
-    const height = obj.getHeight();
+  private getObjectNextX(target: IObject, dist: number) {
+    const [curX, curY] = target.getPos();
+    const width = target.getWidth();
+    const height = target.getHeight();
     const nextX = curX + dist;
     // map out check
     if (nextX < 0 || nextX + width > this.width) {
       return curX;
     }
+    const blockingObj = this.blockingObjectList.find((obj) => {
+      if (obj === target) {
+        return false;
+      }
+      const [objX, objY] = obj.getPos();
+      return isIntersecting(nextX, curY, width, height,
+        objX, objY, obj.getWidth(), obj.getHeight());
+    });
 
-    // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
-    //   .find((target) => {
-    //     if (target === obj) {
-    //       return false;
-    //     }
-    //     const { x: targetX, y: targetY } = target.getPos();
-    //     return isIntersecting(
-    //       nextX, curY, width, height, targetX,
-    //       targetY, target.getWidth(), target.getHeight(),
-    //     );
-    //   });
-
-    // if (!blockingObj) {
+    if (blockingObj) {
+      const blockingObjX = blockingObj.getPos()[0];
+      return curX < blockingObjX ? blockingObjX - width : blockingObjX + blockingObj.getWidth();
+    }
     return nextX;
-    // }
-    // const blockingObjX = blockingObj.getPos().x;
-    // return curX < blockingObjX ? blockingObjX - width : blockingObjX + blockingObj.getWidth();
   }
 
-  private getObjectNextY(obj: IObject, dist: number) {
-    const [curX, curY ] = obj.getPos();
-    const width = obj.getWidth();
-    const height = obj.getHeight();
+  private getObjectNextY(target: IObject, dist: number) {
+    const [curX, curY ] = target.getPos();
+    const width = target.getWidth();
+    const height = target.getHeight();
     const nextY = curY + dist;
 
     // map out check
     if (nextY < 0 || nextY + height > this.height) {
       return curY;
     }
+    const blockingObj = this.blockingObjectList
+      .find((obj) => {
+        if (obj === target) {
+          return false;
+        }
+        const [objX, objY]= obj.getPos();
+        return isIntersecting(
+          curX, nextY, width, height,
+          objX, objY, obj.getWidth(), obj.getHeight(),
+        );
+      });
 
-    // const blockingObj = this.#impassbleMap.concat(this.#collisionObjList)
-    //   .find((target) => {
-    //     if (target === obj) {
-    //       return false;
-    //     }
-    //     const { x: targetX, y: targetY } = target.getPos();
-    //     return isIntersecting(
-    //       curX, nextY, width, height, targetX,
-    //       targetY, target.getWidth(), target.getHeight(),
-    //     );
-    //   });
-
-    // if (!blockingObj) {
+    if (blockingObj) {
+      const blockingObjY = blockingObj.getPos()[1];
+      return curY < blockingObjY ? blockingObjY - height : blockingObjY + blockingObj.getHeight();
+    }
     return nextY;
-    // }
-    // const blockingObjY = blockingObj.getPos().y;
-    // return curY < blockingObjY ? blockingObjY - width : blockingObjY + blockingObj.getHeight();
   }
 
   private interact() {

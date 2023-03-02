@@ -10,6 +10,6 @@ export default class ITile extends IObject {
         throw new Error(`ITile(${name}) size must be 32x32. not ${w}x${h}`);
       }
     });
-    super(name, spriteInfo);
+    super(name, { ...spriteInfo, passable: spriteInfo.passable ?? true });
   }
 }

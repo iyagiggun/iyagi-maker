@@ -13,6 +13,7 @@ export type SpriteInfo = {
   left?: Coords[];
   right?: Coords[];
   visible?: boolean;
+  passable?: boolean;
 }
 
 const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined) => {
@@ -56,11 +57,18 @@ export default class IObject {
   // load 시 값이 세팅 됨 - loaded 판단할 때 사용
   private sprite: Sprite | undefined;
 
+  private passable: boolean;
+
   constructor(private name: string, private spriteInfo: SpriteInfo) {
+    this.passable = spriteInfo.passable ?? false;
   }
 
   public getName() {
     return this.name;
+  }
+
+  public isPassable() {
+    return this.passable;
   }
 
   private getTexture() {
