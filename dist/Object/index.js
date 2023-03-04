@@ -43,6 +43,13 @@ class IObject {
     getName() {
         return this.name;
     }
+    setReact(reaction) {
+        this.reaction = reaction;
+    }
+    react() {
+        var _a;
+        (_a = this.reaction) === null || _a === void 0 ? void 0 : _a.call(this);
+    }
     isPassable() {
         return this.passable;
     }
@@ -118,6 +125,20 @@ class IObject {
         sprite.x = x + this.xDiff;
         sprite.y = y + this.yDiff;
         sprite.zIndex = y;
+    }
+    getDirection() {
+        switch (this.sprite) {
+            case this.upS:
+                return 'up';
+            case this.downS:
+                return 'down';
+            case this.leftS:
+                return 'left';
+            case this.rightS:
+                return 'right';
+            default:
+                throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
+        }
     }
     changeDirectionWithDelta(deltaX, deltaY) {
         this.changeDirection(getDirection(deltaX, deltaY));

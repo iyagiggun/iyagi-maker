@@ -26,8 +26,11 @@ export default class IObject {
     private passable;
     private xDiff;
     private yDiff;
+    private reaction?;
     constructor(name: string, objInfo: IObjectInfo);
     getName(): string;
+    setReact(reaction: () => Promise<void>): void;
+    react(): void;
     isPassable(): boolean;
     private getTexture;
     private getDirFrames;
@@ -37,6 +40,7 @@ export default class IObject {
     getHeight(): number;
     getPos(): number[];
     setPos(x: number, y: number): void;
+    getDirection(): Direction;
     changeDirectionWithDelta(deltaX: number, deltaY: number): void;
     changeDirection(direction: Direction): void;
     play(_speed: number): void;

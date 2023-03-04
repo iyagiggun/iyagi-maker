@@ -14,6 +14,7 @@ export default class IScene extends EventTarget {
     private height;
     private app?;
     private margin;
+    private player?;
     private controller?;
     private blockingObjectList;
     constructor(name: string, tiles: ITile[][], objectList: IObject[], info?: SceneInfo);
@@ -25,9 +26,11 @@ export default class IScene extends EventTarget {
     load(): Promise<void[]>;
     drawMap(): void;
     private getFocusPos;
-    controll(target: IObject): void;
+    control(player: IObject): void;
+    private releaseControl;
     private getObjectNextX;
     private getObjectNextY;
     private interact;
+    talk(speaker: IObject, message: string): Promise<void>;
 }
 export {};

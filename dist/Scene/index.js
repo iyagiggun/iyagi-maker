@@ -7,30 +7,10 @@ const throttle_1 = __importDefault(require("lodash-es/throttle"));
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
 const Tile_1 = require("../Object/Tile");
+const Calc_1 = require("./Calc");
+const TalkBox_1 = require("./TalkBox");
 const DEFAULT_MARGIN = 30;
-/**
- * 반드시 a1 <= a2 이고, b1 <=  b2 여야함. (이게 맞지 않으면 제대로 체크되지 않음)
- * @return {boolean} 1차원 공간에서 직선 2개가 겹치는지 여부
- */
-const isOverlapIn1D = (a1, a2, b1, b2) => {
-    if (a2 <= b1 || a1 >= b2) {
-        return false;
-    }
-    return true;
-};
-const isIntersecting = (x1, y1, width1, height1, x2, y2, width2, height2) => isOverlapIn1D(x1, x1 + width1, x2, x2 + width2) && isOverlapIn1D(y1, y1 + height1, y2, y2 + height2);
-const getAcc = (distance) => {
-    if (distance < 24) {
-        return 0;
-    }
-    if (distance < 48) {
-        return 1;
-    }
-    if (distance < 72) {
-        return 2;
-    }
-    return 3;
-};
+const REACTION_OVERLAP_THRESHOLD = 10;
 class IScene extends EventTarget {
     constructor(name, tiles, objectList, info) {
         var _a;
@@ -92,7 +72,7 @@ class IScene extends EventTarget {
         const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
         return [Math.max(Math.min(destX, this.margin), minX), Math.max(Math.min(destY, this.margin), minY)];
     }
-    controll(target) {
+    control(player) {
         if (!this.controller) {
             const { width: appWidth, height: appHeight } = this.getApplication().view;
             let joystickId = undefined;
@@ -101,13 +81,12 @@ class IScene extends EventTarget {
             this.controller = pixi_js_1.Sprite.from(Constant_1.TRANSPARENT_1PX_IMG);
             this.controller.width = appWidth;
             this.controller.height = appHeight;
-            this.controller.interactive = true;
             const ticker = this.getApplication().ticker;
             const tick = () => {
-                const nextX = this.getObjectNextX(target, deltaX);
-                const nextY = this.getObjectNextY(target, deltaY);
-                target.setPos(nextX, nextY);
-                const [x, y] = this.getFocusPos(target);
+                const nextX = this.getObjectNextX(player, deltaX);
+                const nextY = this.getObjectNextY(player, deltaY);
+                player.setPos(nextX, nextY);
+                const [x, y] = this.getFocusPos(player);
                 this.container.x = x;
                 this.container.y = y;
             };
@@ -134,28 +113,36 @@ class IScene extends EventTarget {
                 if (distance === 0) {
                     return;
                 }
-                const acc = getAcc(distance);
+                const acc = (0, Calc_1.getAcc)(distance);
                 if (acc === 0) {
                     deltaX = 0;
                     deltaY = 0;
-                    target.stop();
+                    player.stop();
                     return;
                 }
                 deltaX = Math.round((diffX * acc) / distance);
                 deltaY = Math.round((diffY * acc) / distance);
-                target.changeDirectionWithDelta(deltaX, deltaY);
-                target.play(acc);
+                player.changeDirectionWithDelta(deltaX, deltaY);
+                player.play(acc);
             }, 50));
             this.controller.addEventListener('touchend', () => {
                 joystickId = undefined;
-                target.stop();
+                player.stop();
                 ticker.remove(tick);
             });
             this.container.parent.addChild(this.controller);
-            const [x, y] = this.getFocusPos(target);
+            const [x, y] = this.getFocusPos(player);
             this.container.x = x;
             this.container.y = y;
         }
+        this.controller.interactive = true;
+        this.player = player;
+    }
+    releaseControl() {
+        if (!this.controller) {
+            return;
+        }
+        this.controller.interactive = false;
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();
@@ -171,7 +158,7 @@ class IScene extends EventTarget {
                 return false;
             }
             const [objX, objY] = obj.getPos();
-            return isIntersecting(nextX, curY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
+            return (0, Calc_1.isIntersecting)(nextX, curY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
         });
         if (blockingObj) {
             const blockingObjX = blockingObj.getPos()[0];
@@ -194,7 +181,7 @@ class IScene extends EventTarget {
                 return false;
             }
             const [objX, objY] = obj.getPos();
-            return isIntersecting(curX, nextY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
+            return (0, Calc_1.isIntersecting)(curX, nextY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
         });
         if (blockingObj) {
             const blockingObjY = blockingObj.getPos()[1];
@@ -203,7 +190,56 @@ class IScene extends EventTarget {
         return nextY;
     }
     interact() {
-        console.error('interact!!');
+        const player = this.player;
+        if (!player) {
+            throw new Error(`[scene: ${this.name}] no player`);
+        }
+        const playerDirection = player.getDirection();
+        const [px, py] = player.getPos();
+        const pWidth = player.getWidth();
+        const cHeight = player.getHeight();
+        const cCenterX = px + pWidth / 2;
+        const cCenterY = py + cHeight / 2;
+        const target = this.objectList.find((obj) => {
+            const [oX, oY] = obj.getPos();
+            switch (playerDirection) {
+                case 'down':
+                    return (Math.abs(cCenterX - (oX + obj.getWidth() / 2))
+                        < REACTION_OVERLAP_THRESHOLD && Math.abs(py + cHeight - oY) < 2);
+                case 'up':
+                    return (Math.abs(cCenterX - (oX + obj.getWidth() / 2))
+                        < REACTION_OVERLAP_THRESHOLD && Math.abs(oY + obj.getHeight() - py) < 2);
+                case 'left':
+                    return (Math.abs(cCenterY - (oY + obj.getHeight() / 2))
+                        < REACTION_OVERLAP_THRESHOLD && Math.abs(oX + obj.getWidth() - px) < 2);
+                case 'right':
+                    return (Math.abs(cCenterY - (oY + obj.getHeight() / 2))
+                        < REACTION_OVERLAP_THRESHOLD && Math.abs(px + pWidth - oX) < 2);
+                default:
+                    return false;
+            }
+        });
+        target === null || target === void 0 ? void 0 : target.react();
+    }
+    talk(speaker, message) {
+        const player = this.player;
+        return new Promise((resolve) => {
+            const app = this.getApplication();
+            this.releaseControl();
+            const lastContainerX = this.container.x;
+            const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app);
+            this.container.x = lastContainerX - talkBox.width / 2;
+            talkBox.interactive = true;
+            talkBox.addEventListener('touchstart', () => {
+                app.stage.removeChild(talkBox);
+                if (player) {
+                    this.control(player);
+                }
+                this.container.x = lastContainerX;
+                resolve();
+            });
+            app.stage.addChild(talkBox);
+        });
     }
 }
 exports.default = IScene;

@@ -4,6 +4,7 @@ import { FRAMES_PER_SECOND } from '../Constant';
 const textureMap: { [key: string] : BaseTexture } = {};
 
 type Coords = [x: number, y: number, w: number, h: number];
+
 type SpriteInfo = {
   coordsList: Coords[];
   xDiff?: number;
@@ -66,12 +67,22 @@ export default class IObject {
   private xDiff = 0;
   private yDiff = 0;
 
+  private reaction?: () => Promise<void>;
+
   constructor(private name: string, private objInfo: IObjectInfo) {
     this.passable = objInfo.passable ?? false;
   }
 
   public getName() {
     return this.name;
+  }
+
+  public setReact(reaction: () => Promise<void>) {
+    this.reaction = reaction;
+  }
+
+  public react() {
+    this.reaction?.();
   }
 
   public isPassable() {
@@ -157,6 +168,21 @@ export default class IObject {
     sprite.x = x + this.xDiff;
     sprite.y = y + this.yDiff;
     sprite.zIndex = y;
+  }
+
+  public getDirection(): Direction {
+    switch (this.sprite) {
+    case this.upS:
+      return 'up';
+    case this.downS:
+      return 'down';
+    case this.leftS:
+      return 'left';
+    case this.rightS:
+      return 'right';
+    default:
+      throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
+    }
   }
 
   public changeDirectionWithDelta(deltaX: number, deltaY: number) {
