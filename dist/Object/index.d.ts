@@ -1,4 +1,4 @@
-import { Sprite } from 'pixi.js';
+import { Container } from 'pixi.js';
 declare type Coords = [x: number, y: number, w: number, h: number];
 declare type SpriteInfo = {
     coordsList: Coords[];
@@ -29,21 +29,24 @@ export default class IObject {
     private reaction?;
     constructor(name: string, objInfo: IObjectInfo);
     getName(): string;
+    attachAt(container: Container): void;
     setReact(reaction: () => Promise<void>): void;
     react(): void;
     isPassable(): boolean;
     private getTexture;
     private getDirFrames;
     load(): Promise<void>;
-    getSprite(): Sprite;
+    private getSprite;
     getWidth(): number;
     getHeight(): number;
     getPos(): number[];
-    setPos(x: number, y: number): void;
+    getGlobalPos(): number[];
+    setPos(x: number, y: number, zIndexGap?: number): void;
     getDirection(): Direction;
-    changeDirectionWithDelta(deltaX: number, deltaY: number): void;
-    changeDirection(direction: Direction): void;
+    changeDirection(deltaX: number, deltaY: number): this;
+    setDirection(direction: Direction): this;
     play(_speed: number): void;
     stop(): void;
+    wait(time?: number): Promise<void>;
 }
 export {};

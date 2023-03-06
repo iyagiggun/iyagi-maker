@@ -1,4 +1,4 @@
-import { Application, Graphics, Text, TextStyle } from 'pixi.js';
+import { Graphics, Text, TextStyle } from 'pixi.js';
 import IObject from '../Object';
 
 const MESSAGE_BOX_HEIGHT = 200;
@@ -18,18 +18,22 @@ const getMessageStyle = (width: number) => new TextStyle({
   fill: [0xffffff, 0xaaaaaa],
 });
 
-export const getTalkBox = (speaker: IObject, message: string, app: Application) => {
+export const getTalkBox = (speaker: IObject, message: string, { width, height }: { width: number, height: number }) => {
   const talkBox = new Graphics();
-  const width = app.view.width / 2;
+  const talkBoxWidth = Math.round(width / 2);
+  talkBox.width = talkBoxWidth;
+  talkBox.x = talkBoxWidth;
+  talkBox.y = 0;
+
   talkBox.beginFill(0x000000, 0.7);
-  talkBox.drawRect(app.view.width - width, 0, width, app.view.height);
+  talkBox.drawRect(0, 0, talkBoxWidth, height);
   talkBox.endFill();
 
   const nameText = new Text(speaker.getName(), STYLE_NAME);
   talkBox.addChild(nameText);
 
-  const messageText = new Text(message, getMessageStyle(width));
-  messageText.x = width + 20;
+  const messageText = new Text(message, getMessageStyle(talkBoxWidth));
+  messageText.x = 20;
   messageText.y = MESSAGE_BOX_HEIGHT;
   talkBox.addChild(messageText);
 

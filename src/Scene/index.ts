@@ -1,5 +1,5 @@
 import throttle from 'lodash-es/throttle';
-import { Application, Container, Graphics, Sprite } from 'pixi.js';
+import { Application, Container, Sprite } from 'pixi.js';
 import { IObject } from '..';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
@@ -14,8 +14,10 @@ type SceneInfo = {
   margin: number;
 }
 
-export default class IScene extends EventTarget {
+type Status = 'idle' |'talking';
 
+export default class IScene extends EventTarget {
+  private status: Status = 'idle';
   private container: Container;
   private width: number;
   private height: number;
@@ -33,10 +35,6 @@ export default class IScene extends EventTarget {
     this.height = 0;
     this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
     this.margin = info?.margin ?? DEFAULT_MARGIN;
-  }
-
-  public getContainer() {
-    return this.container;
   }
 
   public addEventListener(type: ISceneEventType, callback: () => void) {
@@ -57,6 +55,7 @@ export default class IScene extends EventTarget {
 
   public setApplication(app: Application) {
     this.app = app;
+    this.app.stage.addChild(this.container);
   }
 
   public load() {
@@ -67,29 +66,31 @@ export default class IScene extends EventTarget {
 
   public drawMap(){
     this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-      const sprite = tile.getSprite();
-      sprite.x = colIdx * TILE_SIZE;
-      sprite.y = rowIdx * TILE_SIZE;
-      this.container.addChild(sprite);
+      tile.setPos(colIdx * TILE_SIZE, rowIdx * TILE_SIZE, -TILE_SIZE);
+      tile.attachAt(this.container);
     }));
     this.width = this.container.width;
     this.height = this.container.height;
     this.objectList.forEach((obj) => {
-      this.container.addChild(obj.getSprite());
+      obj.attachAt(this.container);
     });
   }
 
-  private getFocusPos(target: IObject) {
+  public focus(target: IObject) {
     const [targetX, targetY] = target.getPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
-    const minX = this.getApplication().view.width - this.width - this.margin;
-    const minY = this.getApplication().view.height- this.height - this.margin;
+    const minX = appWidth - this.width - this.margin;
+    const minY = appHeight - this.height - this.margin;
     const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
     const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-    return [Math.max(Math.min(destX, this.margin), minX), Math.max(Math.min(destY, this.margin), minY)];
+    this.container.x = Math.max(Math.min(destX, this.margin), minX);
+    this.container.y = Math.max(Math.min(destY, this.margin), minY);
   }
 
   public control(player: IObject) {
+    if (this.status !== 'idle') {
+      throw new Error(`[scene: ${this.name}] is busy. status = ${this.status}`);
+    }
     if (!this.controller) {
       const { width: appWidth, height: appHeight } = this.getApplication().view;
       let joystickId: undefined | number = undefined;
@@ -105,13 +106,11 @@ export default class IScene extends EventTarget {
         const nextX = this.getObjectNextX(player, deltaX);
         const nextY = this.getObjectNextY(player, deltaY);
         player.setPos(nextX, nextY);
-        const [x, y] = this.getFocusPos(player);
-        this.container.x = x;
-        this.container.y = y;
+        this.focus(player);
       };
 
       this.controller.addEventListener('touchstart', (evt) => {
-        const { x,y } = evt.global;
+        const { x, y } = evt.global;
         if (joystickId === undefined && x < appWidth / 2) {
           startX = x;
           startY = y;
@@ -126,7 +125,7 @@ export default class IScene extends EventTarget {
         if (joystickId !== evt.pointerId) {
           return;
         }
-        const {x, y} = evt.global;
+        const { x, y } = evt.global;
         const diffX = x - startX;
         const diffY = y - startY;
         const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
@@ -142,7 +141,7 @@ export default class IScene extends EventTarget {
         }
         deltaX = Math.round((diffX * acc) / distance);
         deltaY = Math.round((diffY * acc) / distance);
-        player.changeDirectionWithDelta(deltaX, deltaY);
+        player.changeDirection(deltaX, deltaY);
         player.play(acc);
       }, 50));
 
@@ -153,9 +152,7 @@ export default class IScene extends EventTarget {
       });
 
       this.container.parent.addChild(this.controller);
-      const [x, y] = this.getFocusPos(player);
-      this.container.x = x;
-      this.container.y = y;
+      this.focus(player);
     }
     this.controller.interactive = true;
     this.player = player;
@@ -165,6 +162,7 @@ export default class IScene extends EventTarget {
     if (!this.controller) {
       return;
     }
+    this.player = undefined;
     this.controller.interactive = false;
   }
 
@@ -194,7 +192,7 @@ export default class IScene extends EventTarget {
   }
 
   private getObjectNextY(target: IObject, dist: number) {
-    const [curX, curY ] = target.getPos();
+    const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();
     const nextY = curY + dist;
@@ -208,7 +206,7 @@ export default class IScene extends EventTarget {
         if (obj === target) {
           return false;
         }
-        const [objX, objY]= obj.getPos();
+        const [objX, objY] = obj.getPos();
         return isIntersecting(
           curX, nextY, width, height,
           objX, objY, obj.getWidth(), obj.getHeight(),
@@ -222,7 +220,7 @@ export default class IScene extends EventTarget {
     return nextY;
   }
 
-  private interact() {
+  private interact () {
     const player = this.player;
     if (!player) {
       throw new Error(`[scene: ${this.name}] no player`);
@@ -265,20 +263,29 @@ export default class IScene extends EventTarget {
   }
 
   public talk(speaker: IObject, message: string) {
+    this.status = 'talking';
     const player = this.player;
     return new Promise<void>((resolve) => {
       const app = this.getApplication();
       this.releaseControl();
+      const talkBox = getTalkBox(speaker, message, app.view);
+
       const lastContainerX = this.container.x;
-      const talkBox = getTalkBox(speaker, message, app);
-      this.container.x = lastContainerX - talkBox.width / 2;
+      const minusX = talkBox.width / 2;
+      const speakerGlobalX = speaker.getGlobalPos()[0];
+      if (app.view.width - speakerGlobalX < talkBox.width) {
+        this.container.x = lastContainerX - talkBox.width;
+      } else if (speakerGlobalX + speaker.getWidth() > minusX) {
+        this.container.x = lastContainerX - minusX;
+      }
       talkBox.interactive = true;
       talkBox.addEventListener('touchstart', () => {
         app.stage.removeChild(talkBox);
+        this.container.x = lastContainerX;
+        this.status = 'idle';
         if (player) {
           this.control(player);
         }
-        this.container.x = lastContainerX;
         resolve();
       });
       app.stage.addChild(talkBox);

@@ -21,7 +21,6 @@ class Iyagi {
         scene.load().then(() => {
             scene.setApplication(this.app);
             scene.drawMap();
-            this.app.stage.addChild(scene.getContainer());
             scene.dispatchEvent(new Event_1.default('start'));
         });
     }

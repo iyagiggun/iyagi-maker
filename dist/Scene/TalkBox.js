@@ -17,16 +17,19 @@ const getMessageStyle = (width) => new pixi_js_1.TextStyle({
     wordWrapWidth: width - 40,
     fill: [0xffffff, 0xaaaaaa],
 });
-const getTalkBox = (speaker, message, app) => {
+const getTalkBox = (speaker, message, { width, height }) => {
     const talkBox = new pixi_js_1.Graphics();
-    const width = app.view.width / 2;
+    const talkBoxWidth = Math.round(width / 2);
+    talkBox.width = talkBoxWidth;
+    talkBox.x = talkBoxWidth;
+    talkBox.y = 0;
     talkBox.beginFill(0x000000, 0.7);
-    talkBox.drawRect(app.view.width - width, 0, width, app.view.height);
+    talkBox.drawRect(0, 0, talkBoxWidth, height);
     talkBox.endFill();
     const nameText = new pixi_js_1.Text(speaker.getName(), STYLE_NAME);
     talkBox.addChild(nameText);
-    const messageText = new pixi_js_1.Text(message, getMessageStyle(width));
-    messageText.x = width + 20;
+    const messageText = new pixi_js_1.Text(message, getMessageStyle(talkBoxWidth));
+    messageText.x = 20;
     messageText.y = MESSAGE_BOX_HEIGHT;
     talkBox.addChild(messageText);
     return talkBox;

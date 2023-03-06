@@ -1,4 +1,4 @@
-import { AnimatedSprite, BaseTexture, Sprite, Spritesheet, Texture } from 'pixi.js';
+import { AnimatedSprite, BaseTexture, Container, Sprite, Spritesheet, Texture } from 'pixi.js';
 import { FRAMES_PER_SECOND } from '../Constant';
 
 const textureMap: { [key: string] : BaseTexture } = {};
@@ -77,6 +77,10 @@ export default class IObject {
     return this.name;
   }
 
+  public attachAt(container: Container) {
+    container.addChild(this.getSprite());
+  }
+
   public setReact(reaction: () => Promise<void>) {
     this.reaction = reaction;
   }
@@ -143,7 +147,7 @@ export default class IObject {
     this.setPos(0, 0);
   }
 
-  public getSprite() {
+  private getSprite() {
     if (!this.sprite) {
       throw new Error(`asset '${this.name}' is not loaded`);
     }
@@ -159,15 +163,20 @@ export default class IObject {
   }
 
   public getPos() {
-    const {x, y} = this.getSprite();
+    const { x, y } = this.getSprite();
     return [x - this.xDiff, y - this.yDiff];
   }
 
-  public setPos(x: number, y: number) {
+  public getGlobalPos() {
+    const { x, y } = this.getSprite().getGlobalPosition();
+    return [x - this.xDiff, y - this.yDiff];
+  }
+
+  public setPos(x: number, y: number, zIndexGap = 0) {
     const sprite = this.getSprite();
     sprite.x = x + this.xDiff;
     sprite.y = y + this.yDiff;
-    sprite.zIndex = y;
+    sprite.zIndex = y + zIndexGap;
   }
 
   public getDirection(): Direction {
@@ -185,12 +194,11 @@ export default class IObject {
     }
   }
 
-  public changeDirectionWithDelta(deltaX: number, deltaY: number) {
-    this.changeDirection(getDirection(deltaX, deltaY));
-
+  public changeDirection(deltaX: number, deltaY: number) {
+    return this.setDirection(getDirection(deltaX, deltaY));
   }
 
-  public changeDirection(direction: Direction) {
+  public setDirection(direction: Direction) {
     const lastSprite = this.getSprite();
     const [lastX, lastY] = this.getPos();
     const parent = lastSprite.parent;
@@ -226,6 +234,7 @@ export default class IObject {
       parent.removeChild(lastSprite);
       parent.addChild(this.sprite);
     }
+    return this;
   }
 
   public play(_speed: number) {
@@ -249,5 +258,18 @@ export default class IObject {
       return;
     }
     sprite.stop();
+  }
+
+  public wait(time = 0) {
+    const sprite = this.getSprite();
+    const playing = sprite instanceof AnimatedSprite ? sprite.playing : false;
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        if ( playing && sprite instanceof AnimatedSprite ) {
+          sprite.play();
+        }
+        resolve();
+      }, time);
+    });
   }
 }

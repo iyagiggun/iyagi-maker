@@ -41,5 +41,28 @@ module.exports = {
     "no-trailing-spaces": [
       "error",
     ],
+    "keyword-spacing": [
+      "error",
+    ],
+    "array-bracket-spacing": [
+      "error",
+      "never",
+    ],
+    "object-curly-spacing": [
+      "error",
+      "always",
+    ],
+    "comma-spacing": [
+      "error",
+    ],
+    "space-infix-ops": [
+      "error",
+    ],
+    // "max-len": ["error", { "code": 80,"tabWidth": 4 }],
+    // "padding-line-between-statements": [ "error", 
+    // { blankLine: "always", prev: ["const", "let", "var"], next: "*"},
+    // { blankLine: "any",    prev: ["const", "let", "var"], next: ["const", "let", "var"]},
+    // { blankLine: "always", prev: "*", next: "return" }
+  // ],
   },
 };

@@ -18,15 +18,13 @@ class IScene extends EventTarget {
         this.name = name;
         this.tiles = tiles;
         this.objectList = objectList;
+        this.status = 'idle';
         this.container = new pixi_js_1.Container();
         this.container.sortableChildren = true;
         this.width = 0;
         this.height = 0;
         this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
         this.margin = (_a = info === null || info === void 0 ? void 0 : info.margin) !== null && _a !== void 0 ? _a : DEFAULT_MARGIN;
-    }
-    getContainer() {
-        return this.container;
     }
     addEventListener(type, callback) {
         super.addEventListener(type, callback);
@@ -43,6 +41,7 @@ class IScene extends EventTarget {
     }
     setApplication(app) {
         this.app = app;
+        this.app.stage.addChild(this.container);
     }
     load() {
         return Promise.all([
@@ -52,27 +51,29 @@ class IScene extends EventTarget {
     }
     drawMap() {
         this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-            const sprite = tile.getSprite();
-            sprite.x = colIdx * Tile_1.TILE_SIZE;
-            sprite.y = rowIdx * Tile_1.TILE_SIZE;
-            this.container.addChild(sprite);
+            tile.setPos(colIdx * Tile_1.TILE_SIZE, rowIdx * Tile_1.TILE_SIZE, -Tile_1.TILE_SIZE);
+            tile.attachAt(this.container);
         }));
         this.width = this.container.width;
         this.height = this.container.height;
         this.objectList.forEach((obj) => {
-            this.container.addChild(obj.getSprite());
+            obj.attachAt(this.container);
         });
     }
-    getFocusPos(target) {
+    focus(target) {
         const [targetX, targetY] = target.getPos();
         const { width: appWidth, height: appHeight } = this.getApplication().view;
-        const minX = this.getApplication().view.width - this.width - this.margin;
-        const minY = this.getApplication().view.height - this.height - this.margin;
+        const minX = appWidth - this.width - this.margin;
+        const minY = appHeight - this.height - this.margin;
         const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
         const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-        return [Math.max(Math.min(destX, this.margin), minX), Math.max(Math.min(destY, this.margin), minY)];
+        this.container.x = Math.max(Math.min(destX, this.margin), minX);
+        this.container.y = Math.max(Math.min(destY, this.margin), minY);
     }
     control(player) {
+        if (this.status !== 'idle') {
+            throw new Error(`[scene: ${this.name}] is busy. status = ${this.status}`);
+        }
         if (!this.controller) {
             const { width: appWidth, height: appHeight } = this.getApplication().view;
             let joystickId = undefined;
@@ -86,9 +87,7 @@ class IScene extends EventTarget {
                 const nextX = this.getObjectNextX(player, deltaX);
                 const nextY = this.getObjectNextY(player, deltaY);
                 player.setPos(nextX, nextY);
-                const [x, y] = this.getFocusPos(player);
-                this.container.x = x;
-                this.container.y = y;
+                this.focus(player);
             };
             this.controller.addEventListener('touchstart', (evt) => {
                 const { x, y } = evt.global;
@@ -122,7 +121,7 @@ class IScene extends EventTarget {
                 }
                 deltaX = Math.round((diffX * acc) / distance);
                 deltaY = Math.round((diffY * acc) / distance);
-                player.changeDirectionWithDelta(deltaX, deltaY);
+                player.changeDirection(deltaX, deltaY);
                 player.play(acc);
             }, 50));
             this.controller.addEventListener('touchend', () => {
@@ -131,9 +130,7 @@ class IScene extends EventTarget {
                 ticker.remove(tick);
             });
             this.container.parent.addChild(this.controller);
-            const [x, y] = this.getFocusPos(player);
-            this.container.x = x;
-            this.container.y = y;
+            this.focus(player);
         }
         this.controller.interactive = true;
         this.player = player;
@@ -142,6 +139,7 @@ class IScene extends EventTarget {
         if (!this.controller) {
             return;
         }
+        this.player = undefined;
         this.controller.interactive = false;
     }
     getObjectNextX(target, dist) {
@@ -222,20 +220,29 @@ class IScene extends EventTarget {
         target === null || target === void 0 ? void 0 : target.react();
     }
     talk(speaker, message) {
+        this.status = 'talking';
         const player = this.player;
         return new Promise((resolve) => {
             const app = this.getApplication();
             this.releaseControl();
+            const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
             const lastContainerX = this.container.x;
-            const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app);
-            this.container.x = lastContainerX - talkBox.width / 2;
+            const minusX = talkBox.width / 2;
+            const speakerGlobalX = speaker.getGlobalPos()[0];
+            if (app.view.width - speakerGlobalX < talkBox.width) {
+                this.container.x = lastContainerX - talkBox.width;
+            }
+            else if (speakerGlobalX + speaker.getWidth() > minusX) {
+                this.container.x = lastContainerX - minusX;
+            }
             talkBox.interactive = true;
             talkBox.addEventListener('touchstart', () => {
                 app.stage.removeChild(talkBox);
+                this.container.x = lastContainerX;
+                this.status = 'idle';
                 if (player) {
                     this.control(player);
                 }
-                this.container.x = lastContainerX;
                 resolve();
             });
             app.stage.addChild(talkBox);

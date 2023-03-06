@@ -43,6 +43,9 @@ class IObject {
     getName() {
         return this.name;
     }
+    attachAt(container) {
+        container.addChild(this.getSprite());
+    }
     setReact(reaction) {
         this.reaction = reaction;
     }
@@ -120,11 +123,15 @@ class IObject {
         const { x, y } = this.getSprite();
         return [x - this.xDiff, y - this.yDiff];
     }
-    setPos(x, y) {
+    getGlobalPos() {
+        const { x, y } = this.getSprite().getGlobalPosition();
+        return [x - this.xDiff, y - this.yDiff];
+    }
+    setPos(x, y, zIndexGap = 0) {
         const sprite = this.getSprite();
         sprite.x = x + this.xDiff;
         sprite.y = y + this.yDiff;
-        sprite.zIndex = y;
+        sprite.zIndex = y + zIndexGap;
     }
     getDirection() {
         switch (this.sprite) {
@@ -140,10 +147,10 @@ class IObject {
                 throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
         }
     }
-    changeDirectionWithDelta(deltaX, deltaY) {
-        this.changeDirection(getDirection(deltaX, deltaY));
+    changeDirection(deltaX, deltaY) {
+        return this.setDirection(getDirection(deltaX, deltaY));
     }
-    changeDirection(direction) {
+    setDirection(direction) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const lastSprite = this.getSprite();
         const [lastX, lastY] = this.getPos();
@@ -180,6 +187,7 @@ class IObject {
             parent.removeChild(lastSprite);
             parent.addChild(this.sprite);
         }
+        return this;
     }
     play(_speed) {
         const sprite = this.getSprite();
@@ -201,6 +209,18 @@ class IObject {
             return;
         }
         sprite.stop();
+    }
+    wait(time = 0) {
+        const sprite = this.getSprite();
+        const playing = sprite instanceof pixi_js_1.AnimatedSprite ? sprite.playing : false;
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (playing && sprite instanceof pixi_js_1.AnimatedSprite) {
+                    sprite.play();
+                }
+                resolve();
+            }, time);
+        });
     }
 }
 exports.default = IObject;
