@@ -30,8 +30,9 @@ export default class IObject {
     constructor(name: string, objInfo: IObjectInfo);
     getName(): string;
     attachAt(container: Container): void;
-    setReact(reaction: () => Promise<void>): void;
-    react(): void;
+    setReaction(reaction: () => Promise<void>): void;
+    getReaction(): (() => Promise<void>) | undefined;
+    react(): Promise<void>;
     isPassable(): boolean;
     private getTexture;
     private getDirFrames;
@@ -46,6 +47,7 @@ export default class IObject {
     changeDirection(deltaX: number, deltaY: number): this;
     setDirection(direction: Direction): this;
     play(_speed: number): void;
+    isPlaying(): boolean;
     stop(): void;
     wait(time?: number): Promise<void>;
 }

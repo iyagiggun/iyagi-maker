@@ -97,7 +97,8 @@ export default class IScene extends EventTarget {
       let [startX, startY] = [0, 0];
       let [deltaX, deltaY] = [0, 0];
 
-      this.controller = Sprite.from(TRANSPARENT_1PX_IMG);
+      const controller = Sprite.from(TRANSPARENT_1PX_IMG);
+      this.controller = controller;
       this.controller.width = appWidth;
       this.controller.height = appHeight;
 
@@ -112,12 +113,24 @@ export default class IScene extends EventTarget {
       this.controller.addEventListener('touchstart', (evt) => {
         const { x, y } = evt.global;
         if (joystickId === undefined && x < appWidth / 2) {
+          // case:: joystick on
           startX = x;
           startY = y;
           joystickId = evt.pointerId;
           ticker.add(tick);
         } else {
-          this.interact();
+          // case:: interact
+          const interaction = this.getInteraction();
+          if (!interaction) {
+            return;
+          }
+          controller.interactive = false;
+          joystickId = undefined;
+          player.stop();
+          ticker.remove(tick);
+          interaction().then(() => {
+            controller.interactive = true;
+          });
         }
       });
 
@@ -145,7 +158,10 @@ export default class IScene extends EventTarget {
         player.play(acc);
       }, 50));
 
-      this.controller.addEventListener('touchend', () => {
+      this.controller.addEventListener('touchend', (evt) => {
+        if (joystickId !== evt.pointerId) {
+          return;
+        }
         joystickId = undefined;
         player.stop();
         ticker.remove(tick);
@@ -156,14 +172,6 @@ export default class IScene extends EventTarget {
     }
     this.controller.interactive = true;
     this.player = player;
-  }
-
-  private releaseControl() {
-    if (!this.controller) {
-      return;
-    }
-    this.player = undefined;
-    this.controller.interactive = false;
   }
 
   private getObjectNextX(target: IObject, dist: number) {
@@ -220,7 +228,7 @@ export default class IScene extends EventTarget {
     return nextY;
   }
 
-  private interact () {
+  private getInteraction() {
     const player = this.player;
     if (!player) {
       throw new Error(`[scene: ${this.name}] no player`);
@@ -259,7 +267,10 @@ export default class IScene extends EventTarget {
         return false;
       }
     });
-    target?.react();
+    if (!target) {
+      return null;
+    }
+    return target.getReaction();
   }
 
   public talk(speaker: IObject, message: string) {
@@ -267,13 +278,12 @@ export default class IScene extends EventTarget {
     const player = this.player;
     return new Promise<void>((resolve) => {
       const app = this.getApplication();
-      this.releaseControl();
       const talkBox = getTalkBox(speaker, message, app.view);
 
       const lastContainerX = this.container.x;
       const minusX = talkBox.width / 2;
       const speakerGlobalX = speaker.getGlobalPos()[0];
-      if (app.view.width - speakerGlobalX < talkBox.width) {
+      if (app.view.width - speakerGlobalX < minusX) {
         this.container.x = lastContainerX - talkBox.width;
       } else if (speakerGlobalX + speaker.getWidth() > minusX) {
         this.container.x = lastContainerX - minusX;

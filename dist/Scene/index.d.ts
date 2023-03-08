@@ -27,10 +27,9 @@ export default class IScene extends EventTarget {
     drawMap(): void;
     focus(target: IObject): void;
     control(player: IObject): void;
-    private releaseControl;
     private getObjectNextX;
     private getObjectNextY;
-    private interact;
+    private getInteraction;
     talk(speaker: IObject, message: string): Promise<void>;
 }
 export {};

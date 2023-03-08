@@ -79,7 +79,8 @@ class IScene extends EventTarget {
             let joystickId = undefined;
             let [startX, startY] = [0, 0];
             let [deltaX, deltaY] = [0, 0];
-            this.controller = pixi_js_1.Sprite.from(Constant_1.TRANSPARENT_1PX_IMG);
+            const controller = pixi_js_1.Sprite.from(Constant_1.TRANSPARENT_1PX_IMG);
+            this.controller = controller;
             this.controller.width = appWidth;
             this.controller.height = appHeight;
             const ticker = this.getApplication().ticker;
@@ -92,13 +93,25 @@ class IScene extends EventTarget {
             this.controller.addEventListener('touchstart', (evt) => {
                 const { x, y } = evt.global;
                 if (joystickId === undefined && x < appWidth / 2) {
+                    // case:: joystick on
                     startX = x;
                     startY = y;
                     joystickId = evt.pointerId;
                     ticker.add(tick);
                 }
                 else {
-                    this.interact();
+                    // case:: interact
+                    const interaction = this.getInteraction();
+                    if (!interaction) {
+                        return;
+                    }
+                    controller.interactive = false;
+                    joystickId = undefined;
+                    player.stop();
+                    ticker.remove(tick);
+                    interaction().then(() => {
+                        controller.interactive = true;
+                    });
                 }
             });
             this.controller.addEventListener('touchmove', (0, throttle_1.default)((evt) => {
@@ -124,7 +137,10 @@ class IScene extends EventTarget {
                 player.changeDirection(deltaX, deltaY);
                 player.play(acc);
             }, 50));
-            this.controller.addEventListener('touchend', () => {
+            this.controller.addEventListener('touchend', (evt) => {
+                if (joystickId !== evt.pointerId) {
+                    return;
+                }
                 joystickId = undefined;
                 player.stop();
                 ticker.remove(tick);
@@ -134,13 +150,6 @@ class IScene extends EventTarget {
         }
         this.controller.interactive = true;
         this.player = player;
-    }
-    releaseControl() {
-        if (!this.controller) {
-            return;
-        }
-        this.player = undefined;
-        this.controller.interactive = false;
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();
@@ -187,7 +196,7 @@ class IScene extends EventTarget {
         }
         return nextY;
     }
-    interact() {
+    getInteraction() {
         const player = this.player;
         if (!player) {
             throw new Error(`[scene: ${this.name}] no player`);
@@ -217,19 +226,21 @@ class IScene extends EventTarget {
                     return false;
             }
         });
-        target === null || target === void 0 ? void 0 : target.react();
+        if (!target) {
+            return null;
+        }
+        return target.getReaction();
     }
     talk(speaker, message) {
         this.status = 'talking';
         const player = this.player;
         return new Promise((resolve) => {
             const app = this.getApplication();
-            this.releaseControl();
             const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
             const lastContainerX = this.container.x;
             const minusX = talkBox.width / 2;
             const speakerGlobalX = speaker.getGlobalPos()[0];
-            if (app.view.width - speakerGlobalX < talkBox.width) {
+            if (app.view.width - speakerGlobalX < minusX) {
                 this.container.x = lastContainerX - talkBox.width;
             }
             else if (speakerGlobalX + speaker.getWidth() > minusX) {

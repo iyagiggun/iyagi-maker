@@ -81,12 +81,16 @@ export default class IObject {
     container.addChild(this.getSprite());
   }
 
-  public setReact(reaction: () => Promise<void>) {
+  public setReaction(reaction: () => Promise<void>) {
     this.reaction = reaction;
   }
 
-  public react() {
-    this.reaction?.();
+  public getReaction() {
+    return this.reaction;
+  }
+
+  public async react() {
+    await this.reaction?.();
   }
 
   public isPassable() {
@@ -250,6 +254,13 @@ export default class IObject {
       return;
     }
     sprite.animationSpeed = speed;
+  }
+
+  public isPlaying() {
+    if (!(this.sprite instanceof AnimatedSprite)) {
+      return false;
+    }
+    return this.sprite.playing;
   }
 
   public stop() {

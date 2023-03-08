@@ -46,12 +46,15 @@ class IObject {
     attachAt(container) {
         container.addChild(this.getSprite());
     }
-    setReact(reaction) {
+    setReaction(reaction) {
         this.reaction = reaction;
     }
-    react() {
+    getReaction() {
+        return this.reaction;
+    }
+    async react() {
         var _a;
-        (_a = this.reaction) === null || _a === void 0 ? void 0 : _a.call(this);
+        await ((_a = this.reaction) === null || _a === void 0 ? void 0 : _a.call(this));
     }
     isPassable() {
         return this.passable;
@@ -202,6 +205,12 @@ class IObject {
             return;
         }
         sprite.animationSpeed = speed;
+    }
+    isPlaying() {
+        if (!(this.sprite instanceof pixi_js_1.AnimatedSprite)) {
+            return false;
+        }
+        return this.sprite.playing;
     }
     stop() {
         const sprite = this.getSprite();
