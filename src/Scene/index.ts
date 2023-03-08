@@ -1,5 +1,5 @@
 import throttle from 'lodash-es/throttle';
-import { Application, Container, Sprite } from 'pixi.js';
+import { Application, Container, FederatedPointerEvent, Sprite } from 'pixi.js';
 import { IObject } from '..';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
@@ -110,9 +110,10 @@ export default class IScene extends EventTarget {
         this.focus(player);
       };
 
-      this.controller.addEventListener('touchstart', (evt) => {
+      const onTouchStart = (evt: FederatedPointerEvent) => {
+
         const { x, y } = evt.global;
-        if (joystickId === undefined && x < appWidth / 2) {
+        if (x < appWidth / 2) {
           // case:: joystick on
           startX = x;
           startY = y;
@@ -132,9 +133,9 @@ export default class IScene extends EventTarget {
             controller.interactive = true;
           });
         }
-      });
+      };
 
-      this.controller.addEventListener('touchmove', throttle((evt) => {
+      const onTouchMove = throttle((evt: FederatedPointerEvent) => {
         if (joystickId !== evt.pointerId) {
           return;
         }
@@ -156,16 +157,21 @@ export default class IScene extends EventTarget {
         deltaY = Math.round((diffY * acc) / distance);
         player.changeDirection(deltaX, deltaY);
         player.play(acc);
-      }, 50));
+      }, 50);
 
-      this.controller.addEventListener('touchend', (evt) => {
+      const onTouchEnd = (evt: FederatedPointerEvent) => {
         if (joystickId !== evt.pointerId) {
           return;
         }
         joystickId = undefined;
         player.stop();
         ticker.remove(tick);
-      });
+      };
+
+      this.controller.addEventListener('touchstart', onTouchStart);
+      this.controller.addEventListener('touchmove', onTouchMove);
+      this.controller.addEventListener('touchend', onTouchEnd);
+      this.controller.addEventListener('touchendoutside', onTouchEnd);
 
       this.container.parent.addChild(this.controller);
       this.focus(player);
