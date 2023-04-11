@@ -1,4 +1,4 @@
-import { AnimatedSprite, Assets, BaseTexture, Container, Graphics, Sprite, Spritesheet, Texture } from 'pixi.js';
+import { AnimatedSprite, Assets, BaseTexture, Container, Sprite, Spritesheet, Texture } from 'pixi.js';
 import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
 
 type Coords = [x: number, y: number, w: number, h: number];
@@ -75,8 +75,6 @@ export default class IObject {
   private passable: boolean;
   private xDiff = 0;
   private yDiff = 0;
-
-  private piledUp?: IObject;
 
   private reaction?: () => Promise<void>;
 
@@ -315,9 +313,5 @@ export default class IObject {
         resolve();
       }, time);
     });
-  }
-
-  public pileUp(upper: IObject) {
-    this.piledUp = upper;
   }
 }

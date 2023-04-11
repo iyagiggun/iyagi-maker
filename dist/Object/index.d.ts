@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 declare type Coords = [x: number, y: number, w: number, h: number];
 declare type SpriteInfo = {
     coordsList: Coords[];
@@ -7,7 +7,11 @@ declare type SpriteInfo = {
 };
 declare type Direction = 'up' | 'down' | 'left' | 'right';
 export declare type IObjectInfo = {
-    imageUrl: string;
+    photoInfo?: {
+        default: string;
+        [key: string]: string;
+    };
+    spriteUrl: string;
     up?: SpriteInfo;
     down: SpriteInfo;
     left?: SpriteInfo;
@@ -18,6 +22,8 @@ export declare type IObjectInfo = {
 export default class IObject {
     private name;
     private objInfo;
+    private photo;
+    private photoTextureMap?;
     private sprite;
     private upS;
     private downS;
@@ -29,6 +35,8 @@ export default class IObject {
     private reaction?;
     constructor(name: string, objInfo: IObjectInfo);
     getName(): string;
+    getPhoto(): Sprite;
+    changePhoto(key: string): void;
     attachAt(container: Container): void;
     setReaction(reaction: () => Promise<void>): void;
     getReaction(): (() => Promise<void>) | undefined;

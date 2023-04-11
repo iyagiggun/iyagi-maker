@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
 const textureMap = {};
+const DEFAULT_PHOTO_INFO = { default: Constant_1.TRANSPARENT_1PX_IMG };
 const coordsListToFrame = (prefix) => (coordsList) => {
     if (!coordsList) {
         return {};
@@ -39,9 +40,20 @@ class IObject {
         this.xDiff = 0;
         this.yDiff = 0;
         this.passable = (_a = objInfo.passable) !== null && _a !== void 0 ? _a : false;
+        this.photo = new pixi_js_1.Sprite();
     }
     getName() {
         return this.name;
+    }
+    getPhoto() {
+        return this.photo;
+    }
+    changePhoto(key) {
+        if (!this.photoTextureMap) {
+            throw new Error('No photo texture map.');
+        }
+        // 없으면 pixi.js 에서 알아서 에러 생성해줌
+        this.photo.texture = this.photoTextureMap[key];
     }
     attachAt(container) {
         container.addChild(this.getSprite());
@@ -60,11 +72,11 @@ class IObject {
         return this.passable;
     }
     getTexture() {
-        const imageUrl = this.objInfo.imageUrl;
-        if (!textureMap[imageUrl]) {
-            textureMap[imageUrl] = pixi_js_1.BaseTexture.from(imageUrl);
+        const { spriteUrl } = this.objInfo;
+        if (!textureMap[spriteUrl]) {
+            textureMap[spriteUrl] = pixi_js_1.BaseTexture.from(spriteUrl);
         }
-        return textureMap[imageUrl];
+        return textureMap[spriteUrl];
     }
     getDirFrames() {
         var _a, _b, _c;
@@ -82,6 +94,7 @@ class IObject {
             return Promise.resolve();
         }
         // case: still not loaded
+        // Load Texture
         const dirFrames = this.getDirFrames();
         await new pixi_js_1.Spritesheet(this.getTexture(), {
             frames: Object.values(dirFrames).reduce((acc, _frames) => {
@@ -109,6 +122,12 @@ class IObject {
         this.xDiff = (_b = this.objInfo.down.xDiff) !== null && _b !== void 0 ? _b : 0;
         this.yDiff = (_c = this.objInfo.down.yDiff) !== null && _c !== void 0 ? _c : 0;
         this.setPos(0, 0);
+        // Load Photo
+        const photoInfo = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
+        const photoKeys = Object.keys(photoInfo);
+        photoKeys.forEach((key) => pixi_js_1.Assets.add(`${this.name}:${key}`, photoInfo[key]));
+        this.photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
+        this.photo.texture = this.photoTextureMap[`${this.name}:default`];
     }
     getSprite() {
         if (!this.sprite) {
