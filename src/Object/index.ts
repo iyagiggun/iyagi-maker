@@ -1,7 +1,5 @@
-import { AnimatedSprite, BaseTexture, Container, Sprite, Spritesheet, Texture } from 'pixi.js';
-import { FRAMES_PER_SECOND } from '../Constant';
-
-const textureMap: { [key: string] : BaseTexture } = {};
+import { AnimatedSprite, Assets, BaseTexture, Container, Graphics, Sprite, Spritesheet, Texture } from 'pixi.js';
+import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
 
 type Coords = [x: number, y: number, w: number, h: number];
 
@@ -14,7 +12,11 @@ type SpriteInfo = {
 type Direction = 'up' | 'down' | 'left' | 'right';
 
 export type IObjectInfo = {
-  imageUrl: string;
+  photoInfo?: {
+    default: string;
+    [key: string]: string;
+  }
+  spriteUrl: string;
   up?: SpriteInfo;
   down: SpriteInfo;
   left?: SpriteInfo;
@@ -22,6 +24,9 @@ export type IObjectInfo = {
   visible?: boolean;
   passable?: boolean;
 }
+
+const textureMap: { [key: string] : BaseTexture } = {};
+const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };
 
 const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined) => {
   if (!coordsList) {
@@ -55,6 +60,10 @@ const getDirection = (deltaX: number, deltaY: number) => {
 };
 
 export default class IObject {
+
+  private photo;
+  private photoTextureMap?: { [key: string]: Texture};
+
   // 현재 sprite. load 후 값이 세팅 됨 - loaded 판단할 때 사용
   private sprite: Sprite | undefined;
 
@@ -67,14 +76,29 @@ export default class IObject {
   private xDiff = 0;
   private yDiff = 0;
 
+  private piledUp?: IObject;
+
   private reaction?: () => Promise<void>;
 
   constructor(private name: string, private objInfo: IObjectInfo) {
     this.passable = objInfo.passable ?? false;
+    this.photo = new Sprite();
   }
 
   public getName() {
     return this.name;
+  }
+
+  public getPhoto() {
+    return this.photo;
+  }
+
+  public changePhoto(key: string) {
+    if (!this.photoTextureMap) {
+      throw new Error('No photo texture map.');
+    }
+    // 없으면 pixi.js 에서 알아서 에러 생성해줌
+    this.photo.texture = this.photoTextureMap[key];
   }
 
   public attachAt(container: Container) {
@@ -98,11 +122,11 @@ export default class IObject {
   }
 
   private getTexture() {
-    const imageUrl = this.objInfo.imageUrl;
-    if (!textureMap[imageUrl]) {
-      textureMap[imageUrl] = BaseTexture.from(imageUrl);
+    const { spriteUrl } = this.objInfo;
+    if (!textureMap[spriteUrl]) {
+      textureMap[spriteUrl] = BaseTexture.from(spriteUrl);
     }
-    return textureMap[imageUrl];
+    return textureMap[spriteUrl];
   }
 
   private getDirFrames() {
@@ -120,6 +144,8 @@ export default class IObject {
       return Promise.resolve();
     }
     // case: still not loaded
+
+    // Load Texture
     const dirFrames = this.getDirFrames();
     await new Spritesheet(this.getTexture(), {
       frames: Object.values(dirFrames).reduce((acc, _frames) => {
@@ -149,6 +175,13 @@ export default class IObject {
     this.xDiff = this.objInfo.down.xDiff ?? 0;
     this.yDiff = this.objInfo.down.yDiff ?? 0;
     this.setPos(0, 0);
+
+    // Load Photo
+    const photoInfo: { [key: string]: string } = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
+    const photoKeys = Object.keys(photoInfo);
+    photoKeys.forEach((key) => Assets.add(`${this.name}:${key}`, photoInfo[key]));
+    this.photoTextureMap = await Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
+    this.photo.texture = this.photoTextureMap[`${this.name}:default`];
   }
 
   private getSprite() {
@@ -282,5 +315,9 @@ export default class IObject {
         resolve();
       }, time);
     });
+  }
+
+  public pileUp(upper: IObject) {
+    this.piledUp = upper;
   }
 }

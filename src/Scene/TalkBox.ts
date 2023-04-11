@@ -1,7 +1,6 @@
-import { Graphics, Text, TextStyle } from 'pixi.js';
+import { Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import IObject from '../Object';
 
-const MESSAGE_BOX_HEIGHT = 200;
 const STYLE_NAME = new TextStyle({
   fontSize: 30,
   fontStyle: 'italic',
@@ -21,20 +20,29 @@ const getMessageStyle = (width: number) => new TextStyle({
 export const getTalkBox = (speaker: IObject, message: string, { width, height }: { width: number, height: number }) => {
   const talkBox = new Graphics();
   const talkBoxWidth = Math.round(width / 2);
+
   talkBox.width = talkBoxWidth;
   talkBox.x = talkBoxWidth;
   talkBox.y = 0;
-
   talkBox.beginFill(0x000000, 0.7);
   talkBox.drawRect(0, 0, talkBoxWidth, height);
   talkBox.endFill();
 
+  const photo = new Sprite(speaker.getPhoto().texture);
+  photo.width = 144;
+  photo.height = 144;
+  photo.x = 15;
+  photo.y = 15;
+  talkBox.addChild(photo);
+
   const nameText = new Text(speaker.getName(), STYLE_NAME);
+  nameText.x = 15;
+  nameText.y = photo.y + photo.height + 15;
   talkBox.addChild(nameText);
 
   const messageText = new Text(message, getMessageStyle(talkBoxWidth));
-  messageText.x = 20;
-  messageText.y = MESSAGE_BOX_HEIGHT;
+  messageText.x = 15;
+  messageText.y = nameText.y + nameText.height + 15;
   talkBox.addChild(messageText);
 
   return talkBox;
