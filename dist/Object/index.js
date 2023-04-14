@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
+const Calc_1 = require("../Scene/Calc");
 const textureMap = {};
 const DEFAULT_PHOTO_INFO = { default: Constant_1.TRANSPARENT_1PX_IMG };
 const coordsListToFrame = (prefix) => (coordsList) => {
@@ -37,46 +38,8 @@ class IObject {
         var _a;
         this.name = name;
         this.objInfo = objInfo;
-        this.xDiff = 0;
-        this.yDiff = 0;
         this.passable = (_a = objInfo.passable) !== null && _a !== void 0 ? _a : false;
         this.photo = new pixi_js_1.Sprite();
-    }
-    getName() {
-        return this.name;
-    }
-    getPhoto() {
-        return this.photo;
-    }
-    changePhoto(key) {
-        if (!this.photoTextureMap) {
-            throw new Error('No photo texture map.');
-        }
-        // 없으면 pixi.js 에서 알아서 에러 생성해줌
-        this.photo.texture = this.photoTextureMap[key];
-    }
-    attachAt(container) {
-        container.addChild(this.getSprite());
-    }
-    setReaction(reaction) {
-        this.reaction = reaction;
-    }
-    getReaction() {
-        return this.reaction;
-    }
-    async react() {
-        var _a;
-        await ((_a = this.reaction) === null || _a === void 0 ? void 0 : _a.call(this));
-    }
-    isPassable() {
-        return this.passable;
-    }
-    getTexture() {
-        const { spriteUrl } = this.objInfo;
-        if (!textureMap[spriteUrl]) {
-            textureMap[spriteUrl] = pixi_js_1.BaseTexture.from(spriteUrl);
-        }
-        return textureMap[spriteUrl];
     }
     getDirFrames() {
         var _a, _b, _c;
@@ -88,7 +51,7 @@ class IObject {
         };
     }
     async load() {
-        var _a, _b, _c;
+        var _a;
         // case: loaded
         if (this.sprite) {
             return Promise.resolve();
@@ -114,14 +77,10 @@ class IObject {
         this.downS = getSprite(Object.keys(dirFrames.down));
         this.leftS = getSprite(Object.keys(dirFrames.left));
         this.rightS = getSprite(Object.keys(dirFrames.right));
-        this.sprite = this.downS;
-        if (this.sprite === undefined) {
-            throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
-        }
-        (_a = this.sprite.visible == this.objInfo.visible) !== null && _a !== void 0 ? _a : true;
-        this.xDiff = (_b = this.objInfo.down.xDiff) !== null && _b !== void 0 ? _b : 0;
-        this.yDiff = (_c = this.objInfo.down.yDiff) !== null && _c !== void 0 ? _c : 0;
-        this.setPos(0, 0);
+        this.setDirection('down');
+        this.getSprite().visible = (_a = this.objInfo.visible) !== null && _a !== void 0 ? _a : true;
+        const [posX, posY] = this.objInfo.pos || [0, 0];
+        this.setPos(posX, posY);
         // Load Photo
         const photoInfo = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
         const photoKeys = Object.keys(photoInfo);
@@ -129,31 +88,82 @@ class IObject {
         this.photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
         this.photo.texture = this.photoTextureMap[`${this.name}:default`];
     }
+    getName() {
+        return this.name;
+    }
+    getPhoto() {
+        return this.photo;
+    }
+    changePhoto(key) {
+        if (!this.photoTextureMap) {
+            throw new Error('No photo texture map.');
+        }
+        // 없으면 pixi.js 에서 알아서 에러 생성해줌
+        this.photo.texture = this.photoTextureMap[key];
+    }
     getSprite() {
         if (!this.sprite) {
             throw new Error(`asset '${this.name}' is not loaded`);
         }
         return this.sprite;
     }
-    getWidth() {
-        return this.getSprite().width + this.xDiff;
+    attachAt(container) {
+        container.addChild(this.getSprite());
     }
-    getHeight() {
-        return this.getSprite().height + this.yDiff;
+    getCollisionMod() {
+        if (!this.collisionMod) {
+            const sprite = this.getSprite();
+            return [0, 0, sprite.width, sprite.height];
+        }
+        return this.collisionMod;
+    }
+    setReaction(reaction) {
+        this.reaction = reaction;
+    }
+    getReaction() {
+        return this.reaction;
+    }
+    async react() {
+        var _a;
+        await ((_a = this.reaction) === null || _a === void 0 ? void 0 : _a.call(this));
+    }
+    isPassable() {
+        return this.passable;
+    }
+    getTexture() {
+        const { spriteUrl } = this.objInfo;
+        if (!textureMap[spriteUrl]) {
+            textureMap[spriteUrl] = pixi_js_1.BaseTexture.from(spriteUrl);
+        }
+        return textureMap[spriteUrl];
     }
     getPos() {
-        const { x, y } = this.getSprite();
-        return [x - this.xDiff, y - this.yDiff];
-    }
-    getGlobalPos() {
-        const { x, y } = this.getSprite().getGlobalPosition();
-        return [x - this.xDiff, y - this.yDiff];
+        const [modX, modY] = this.getCollisionMod();
+        const { x: spriteX, y: spriteY } = this.getSprite();
+        return [spriteX + modX, spriteY + modY];
     }
     setPos(x, y, zIndexGap = 0) {
+        const [modX, modY] = this.getCollisionMod();
         const sprite = this.getSprite();
-        sprite.x = x + this.xDiff;
-        sprite.y = y + this.yDiff;
+        sprite.x = x - modX;
+        sprite.y = y - modY;
         sprite.zIndex = y + zIndexGap;
+    }
+    getWidth() {
+        return this.getCollisionMod()[Calc_1.COORDS_W_IDX];
+    }
+    getHeight() {
+        return this.getCollisionMod()[Calc_1.COORDS_H_IDX];
+    }
+    getGlobalPos() {
+        const [modX, modY] = this.getCollisionCoords();
+        const { x: globalX, y: globalY } = this.getSprite().getGlobalPosition();
+        return [globalX + modX, globalY + modY];
+    }
+    getCollisionCoords() {
+        const [x, y] = this.getPos();
+        const [, , colsW, colsH] = this.getCollisionMod();
+        return [x, y, colsW, colsH];
     }
     getDirection() {
         switch (this.sprite) {
@@ -173,30 +183,25 @@ class IObject {
         return this.setDirection(getDirection(deltaX, deltaY));
     }
     setDirection(direction) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
-        const lastSprite = this.getSprite();
-        const [lastX, lastY] = this.getPos();
-        const parent = lastSprite.parent;
+        var _a, _b, _c;
+        const lastSprite = this.sprite;
+        const [lastX, lastY] = lastSprite ? this.getPos() : [];
         switch (direction) {
             case 'up':
                 this.sprite = this.upS;
-                this.xDiff = (_b = (_a = this.objInfo.up) === null || _a === void 0 ? void 0 : _a.xDiff) !== null && _b !== void 0 ? _b : 0;
-                this.yDiff = (_d = (_c = this.objInfo.up) === null || _c === void 0 ? void 0 : _c.yDiff) !== null && _d !== void 0 ? _d : 0;
+                this.collisionMod = (_a = this.objInfo.up) === null || _a === void 0 ? void 0 : _a.collisionCoords;
                 break;
             case 'down':
                 this.sprite = this.downS;
-                this.xDiff = (_e = this.objInfo.down.xDiff) !== null && _e !== void 0 ? _e : 0;
-                this.yDiff = (_f = this.objInfo.down.yDiff) !== null && _f !== void 0 ? _f : 0;
+                this.collisionMod = this.objInfo.down.collisionCoords;
                 break;
             case 'left':
                 this.sprite = this.leftS;
-                this.xDiff = (_h = (_g = this.objInfo.left) === null || _g === void 0 ? void 0 : _g.xDiff) !== null && _h !== void 0 ? _h : 0;
-                this.yDiff = (_k = (_j = this.objInfo.left) === null || _j === void 0 ? void 0 : _j.yDiff) !== null && _k !== void 0 ? _k : 0;
+                this.collisionMod = (_b = this.objInfo.left) === null || _b === void 0 ? void 0 : _b.collisionCoords;
                 break;
             case 'right':
                 this.sprite = this.rightS;
-                this.xDiff = (_m = (_l = this.objInfo.right) === null || _l === void 0 ? void 0 : _l.xDiff) !== null && _m !== void 0 ? _m : 0;
-                this.yDiff = (_p = (_o = this.objInfo.right) === null || _o === void 0 ? void 0 : _o.yDiff) !== null && _p !== void 0 ? _p : 0;
+                this.collisionMod = (_c = this.objInfo.right) === null || _c === void 0 ? void 0 : _c.collisionCoords;
                 break;
             default:
                 throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
@@ -204,7 +209,11 @@ class IObject {
         if (!this.sprite) {
             throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
         }
+        if (!lastSprite) {
+            return;
+        }
         this.setPos(lastX, lastY);
+        const parent = lastSprite.parent;
         if (parent) {
             parent.removeChild(lastSprite);
             parent.addChild(this.sprite);

@@ -168,8 +168,7 @@ class IScene extends EventTarget {
             if (obj === target) {
                 return false;
             }
-            const [objX, objY] = obj.getPos();
-            return (0, Calc_1.isIntersecting)(nextX, curY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
+            return (0, Calc_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionCoords());
         });
         if (blockingObj) {
             const blockingObjX = blockingObj.getPos()[0];
@@ -191,8 +190,7 @@ class IScene extends EventTarget {
             if (obj === target) {
                 return false;
             }
-            const [objX, objY] = obj.getPos();
-            return (0, Calc_1.isIntersecting)(curX, nextY, width, height, objX, objY, obj.getWidth(), obj.getHeight());
+            return (0, Calc_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionCoords());
         });
         if (blockingObj) {
             const blockingObjY = blockingObj.getPos()[1];

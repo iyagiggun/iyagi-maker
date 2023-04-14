@@ -1,12 +1,10 @@
 import { AnimatedSprite, Assets, BaseTexture, Container, Sprite, Spritesheet, Texture } from 'pixi.js';
 import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
-
-type Coords = [x: number, y: number, w: number, h: number];
+import { COORDS_H_IDX, COORDS_W_IDX, Coords } from '../Scene/Calc';
 
 type SpriteInfo = {
   coordsList: Coords[];
-  xDiff?: number;
-  yDiff?: number;
+  collisionCoords?: Coords;
 }
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -16,11 +14,15 @@ export type IObjectInfo = {
     default: string;
     [key: string]: string;
   }
+
   spriteUrl: string;
   up?: SpriteInfo;
   down: SpriteInfo;
   left?: SpriteInfo;
   right?: SpriteInfo;
+
+  pos?: [x: number, y: number];
+
   visible?: boolean;
   passable?: boolean;
 }
@@ -73,58 +75,14 @@ export default class IObject {
   private rightS: Sprite | undefined;
 
   private passable: boolean;
-  private xDiff = 0;
-  private yDiff = 0;
+
+  private collisionMod?: Coords;
 
   private reaction?: () => Promise<void>;
 
   constructor(private name: string, private objInfo: IObjectInfo) {
     this.passable = objInfo.passable ?? false;
     this.photo = new Sprite();
-  }
-
-  public getName() {
-    return this.name;
-  }
-
-  public getPhoto() {
-    return this.photo;
-  }
-
-  public changePhoto(key: string) {
-    if (!this.photoTextureMap) {
-      throw new Error('No photo texture map.');
-    }
-    // 없으면 pixi.js 에서 알아서 에러 생성해줌
-    this.photo.texture = this.photoTextureMap[key];
-  }
-
-  public attachAt(container: Container) {
-    container.addChild(this.getSprite());
-  }
-
-  public setReaction(reaction: () => Promise<void>) {
-    this.reaction = reaction;
-  }
-
-  public getReaction() {
-    return this.reaction;
-  }
-
-  public async react() {
-    await this.reaction?.();
-  }
-
-  public isPassable() {
-    return this.passable;
-  }
-
-  private getTexture() {
-    const { spriteUrl } = this.objInfo;
-    if (!textureMap[spriteUrl]) {
-      textureMap[spriteUrl] = BaseTexture.from(spriteUrl);
-    }
-    return textureMap[spriteUrl];
   }
 
   private getDirFrames() {
@@ -165,14 +123,11 @@ export default class IObject {
     this.leftS = getSprite(Object.keys(dirFrames.left));
     this.rightS = getSprite(Object.keys(dirFrames.right));
 
-    this.sprite = this.downS;
-    if (this.sprite === undefined) {
-      throw new Error(`Fail to load ${this.name}. Down sprite info is required.`);
-    }
-    this.sprite.visible == this.objInfo.visible ?? true;
-    this.xDiff = this.objInfo.down.xDiff ?? 0;
-    this.yDiff = this.objInfo.down.yDiff ?? 0;
-    this.setPos(0, 0);
+    this.setDirection('down');
+    this.getSprite().visible = this.objInfo.visible ?? true;
+
+    const [posX, posY] = this.objInfo.pos || [0, 0];
+    this.setPos(posX, posY);
 
     // Load Photo
     const photoInfo: { [key: string]: string } = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
@@ -182,6 +137,22 @@ export default class IObject {
     this.photo.texture = this.photoTextureMap[`${this.name}:default`];
   }
 
+  public getName() {
+    return this.name;
+  }
+
+  public getPhoto() {
+    return this.photo;
+  }
+
+  public changePhoto(key: string) {
+    if (!this.photoTextureMap) {
+      throw new Error('No photo texture map.');
+    }
+    // 없으면 pixi.js 에서 알아서 에러 생성해줌
+    this.photo.texture = this.photoTextureMap[key];
+  }
+
   private getSprite() {
     if (!this.sprite) {
       throw new Error(`asset '${this.name}' is not loaded`);
@@ -189,29 +160,74 @@ export default class IObject {
     return this.sprite;
   }
 
-  public getWidth() {
-    return this.getSprite().width + this.xDiff;
+  public attachAt(container: Container) {
+    container.addChild(this.getSprite());
   }
 
-  public getHeight() {
-    return this.getSprite().height + this.yDiff;
+  public getCollisionMod() {
+    if (!this.collisionMod) {
+      const sprite = this.getSprite();
+      return [0, 0, sprite.width, sprite.height];
+    }
+    return this.collisionMod;
+  }
+
+  public setReaction(reaction: () => Promise<void>) {
+    this.reaction = reaction;
+  }
+
+  public getReaction() {
+    return this.reaction;
+  }
+
+  public async react() {
+    await this.reaction?.();
+  }
+
+  public isPassable() {
+    return this.passable;
+  }
+
+  private getTexture() {
+    const { spriteUrl } = this.objInfo;
+    if (!textureMap[spriteUrl]) {
+      textureMap[spriteUrl] = BaseTexture.from(spriteUrl);
+    }
+    return textureMap[spriteUrl];
   }
 
   public getPos() {
-    const { x, y } = this.getSprite();
-    return [x - this.xDiff, y - this.yDiff];
-  }
-
-  public getGlobalPos() {
-    const { x, y } = this.getSprite().getGlobalPosition();
-    return [x - this.xDiff, y - this.yDiff];
+    const [modX, modY] = this.getCollisionMod();
+    const { x: spriteX, y: spriteY } = this.getSprite();
+    return [spriteX + modX, spriteY + modY];
   }
 
   public setPos(x: number, y: number, zIndexGap = 0) {
+    const [modX, modY] = this.getCollisionMod();
     const sprite = this.getSprite();
-    sprite.x = x + this.xDiff;
-    sprite.y = y + this.yDiff;
+    sprite.x = x - modX;
+    sprite.y = y - modY;
     sprite.zIndex = y + zIndexGap;
+  }
+
+  public getWidth() {
+    return this.getCollisionMod()[COORDS_W_IDX];
+  }
+
+  public getHeight() {
+    return this.getCollisionMod()[COORDS_H_IDX];
+  }
+
+  public getGlobalPos() {
+    const [modX, modY] = this.getCollisionCoords();
+    const { x: globalX, y: globalY } = this.getSprite().getGlobalPosition();
+    return [globalX + modX, globalY + modY];
+  }
+
+  public getCollisionCoords() {
+    const [x, y] = this.getPos();
+    const [, , colsW, colsH] = this.getCollisionMod();
+    return [x, y, colsW, colsH];
   }
 
   public getDirection(): Direction {
@@ -234,29 +250,24 @@ export default class IObject {
   }
 
   public setDirection(direction: Direction) {
-    const lastSprite = this.getSprite();
-    const [lastX, lastY] = this.getPos();
-    const parent = lastSprite.parent;
+    const lastSprite = this.sprite;
+    const [lastX, lastY] = lastSprite ? this.getPos() : [];
     switch (direction) {
     case 'up':
       this.sprite = this.upS;
-      this.xDiff = this.objInfo.up?.xDiff ?? 0;
-      this.yDiff = this.objInfo.up?.yDiff ?? 0;
+      this.collisionMod = this.objInfo.up?.collisionCoords;
       break;
     case 'down':
       this.sprite = this.downS;
-      this.xDiff = this.objInfo.down.xDiff ?? 0;
-      this.yDiff = this.objInfo.down.yDiff ?? 0;
+      this.collisionMod = this.objInfo.down.collisionCoords;
       break;
     case 'left':
       this.sprite = this.leftS;
-      this.xDiff = this.objInfo.left?.xDiff ?? 0;
-      this.yDiff = this.objInfo.left?.yDiff ?? 0;
+      this.collisionMod = this.objInfo.left?.collisionCoords;
       break;
     case 'right':
       this.sprite = this.rightS;
-      this.xDiff = this.objInfo.right?.xDiff ?? 0;
-      this.yDiff = this.objInfo.right?.yDiff ?? 0;
+      this.collisionMod = this.objInfo.right?.collisionCoords;
       break;
     default:
       throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
@@ -264,7 +275,11 @@ export default class IObject {
     if (!this.sprite) {
       throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
     }
+    if (!lastSprite) {
+      return;
+    }
     this.setPos(lastX, lastY);
+    const parent = lastSprite.parent;
     if (parent) {
       parent.removeChild(lastSprite);
       parent.addChild(this.sprite);

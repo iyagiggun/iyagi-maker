@@ -193,9 +193,8 @@ export default class IScene extends EventTarget {
       if (obj === target) {
         return false;
       }
-      const [objX, objY] = obj.getPos();
-      return isIntersecting(nextX, curY, width, height,
-        objX, objY, obj.getWidth(), obj.getHeight());
+      return isIntersecting([nextX, curY, width, height],
+        obj.getCollisionCoords());
     });
 
     if (blockingObj) {
@@ -220,11 +219,8 @@ export default class IScene extends EventTarget {
         if (obj === target) {
           return false;
         }
-        const [objX, objY] = obj.getPos();
         return isIntersecting(
-          curX, nextY, width, height,
-          objX, objY, obj.getWidth(), obj.getHeight(),
-        );
+          [curX, nextY, width, height], obj.getCollisionCoords());
       });
 
     if (blockingObj) {
