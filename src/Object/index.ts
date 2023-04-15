@@ -21,7 +21,7 @@ export type IObjectInfo = {
   left?: SpriteInfo;
   right?: SpriteInfo;
 
-  pos?: [x: number, y: number];
+  pos?: [x: number, y: number, z?: number];
 
   visible?: boolean;
   passable?: boolean;
@@ -126,8 +126,8 @@ export default class IObject {
     this.setDirection('down');
     this.getSprite().visible = this.objInfo.visible ?? true;
 
-    const [posX, posY] = this.objInfo.pos || [0, 0];
-    this.setPos(posX, posY);
+    const [posX, posY, zMod] = this.objInfo.pos || [0, 0];
+    this.setPos(posX, posY, zMod);
 
     // Load Photo
     const photoInfo: { [key: string]: string } = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
@@ -202,12 +202,12 @@ export default class IObject {
     return [spriteX + modX, spriteY + modY];
   }
 
-  public setPos(x: number, y: number, zIndexGap = 0) {
+  public setPos(x: number, y: number, zMod = 0) {
     const [modX, modY] = this.getCollisionMod();
     const sprite = this.getSprite();
     sprite.x = x - modX;
     sprite.y = y - modY;
-    sprite.zIndex = y + zIndexGap;
+    sprite.zIndex = y + zMod;
   }
 
   public getWidth() {
