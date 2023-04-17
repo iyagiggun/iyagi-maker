@@ -1,11 +1,13 @@
-import { AnimatedSprite, Assets, BaseTexture, Container, Sprite, Spritesheet, Texture } from 'pixi.js';
+import {
+  AnimatedSprite, Assets, BaseTexture, Container, Sprite, Spritesheet, Texture,
+} from 'pixi.js';
 import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
 import { COORDS_H_IDX, COORDS_W_IDX, Coords } from '../Scene/Calc';
 
 type SpriteInfo = {
   coordsList: Coords[];
   collisionCoords?: Coords;
-}
+};
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -25,7 +27,7 @@ export type IObjectInfo = {
 
   visible?: boolean;
   passable?: boolean;
-}
+};
 
 const textureMap: { [key: string] : BaseTexture } = {};
 const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };
@@ -34,14 +36,14 @@ const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined)
   if (!coordsList) {
     return {};
   }
-  return coordsList.reduce((frames, [x, y, w, h], idx) => {
-    return {
-      ...frames,
-      [`${prefix}-${idx}`]: {
-        frame: { x, y, w, h }
-      }
-    };
-  }, {});
+  return coordsList.reduce((frames, [x, y, w, h], idx) => ({
+    ...frames,
+    [`${prefix}-${idx}`]: {
+      frame: {
+        x, y, w, h,
+      },
+    },
+  }), {});
 };
 
 const getSprite = (frameKeyList: string[]) => {
@@ -62,16 +64,19 @@ const getDirection = (deltaX: number, deltaY: number) => {
 };
 
 export default class IObject {
-
   private photo;
-  private photoTextureMap?: { [key: string]: Texture};
+
+  private photoTextureMap?: { [key: string]: Texture };
 
   // 현재 sprite. load 후 값이 세팅 됨 - loaded 판단할 때 사용
   private sprite: Sprite | undefined;
 
   private upS: Sprite | undefined;
+
   private downS: Sprite | undefined;
+
   private leftS: Sprite | undefined;
+
   private rightS: Sprite | undefined;
 
   private passable: boolean;
@@ -90,14 +95,14 @@ export default class IObject {
       up: coordsListToFrame(`${this.name}-up`)(this.objInfo.up?.coordsList),
       down: coordsListToFrame(`${this.name}-down`)(this.objInfo.down.coordsList),
       left: coordsListToFrame(`${this.name}-left`)(this.objInfo.left?.coordsList),
-      right: coordsListToFrame(`${this.name}-right`)(this.objInfo.right?.coordsList)
+      right: coordsListToFrame(`${this.name}-right`)(this.objInfo.right?.coordsList),
     };
   }
 
   public async load() {
     // case: loaded
     if (this.sprite) {
-      return Promise.resolve();
+      return;
     }
     // case: still not loaded
 
@@ -115,7 +120,7 @@ export default class IObject {
       }, {}),
       meta: {
         scale: '1',
-      }
+      },
     }).parse();
 
     this.upS = getSprite(Object.keys(dirFrames.up));
@@ -232,16 +237,16 @@ export default class IObject {
 
   public getDirection(): Direction {
     switch (this.sprite) {
-    case this.upS:
-      return 'up';
-    case this.downS:
-      return 'down';
-    case this.leftS:
-      return 'left';
-    case this.rightS:
-      return 'right';
-    default:
-      throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
+      case this.upS:
+        return 'up';
+      case this.downS:
+        return 'down';
+      case this.leftS:
+        return 'left';
+      case this.rightS:
+        return 'right';
+      default:
+        throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
     }
   }
 
@@ -253,33 +258,33 @@ export default class IObject {
     const lastSprite = this.sprite;
     const [lastX, lastY] = lastSprite ? this.getPos() : [];
     switch (direction) {
-    case 'up':
-      this.sprite = this.upS;
-      this.collisionMod = this.objInfo.up?.collisionCoords;
-      break;
-    case 'down':
-      this.sprite = this.downS;
-      this.collisionMod = this.objInfo.down.collisionCoords;
-      break;
-    case 'left':
-      this.sprite = this.leftS;
-      this.collisionMod = this.objInfo.left?.collisionCoords;
-      break;
-    case 'right':
-      this.sprite = this.rightS;
-      this.collisionMod = this.objInfo.right?.collisionCoords;
-      break;
-    default:
-      throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
+      case 'up':
+        this.sprite = this.upS;
+        this.collisionMod = this.objInfo.up?.collisionCoords;
+        break;
+      case 'down':
+        this.sprite = this.downS;
+        this.collisionMod = this.objInfo.down.collisionCoords;
+        break;
+      case 'left':
+        this.sprite = this.leftS;
+        this.collisionMod = this.objInfo.left?.collisionCoords;
+        break;
+      case 'right':
+        this.sprite = this.rightS;
+        this.collisionMod = this.objInfo.right?.collisionCoords;
+        break;
+      default:
+        throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
     }
     if (!this.sprite) {
       throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
     }
     if (!lastSprite) {
-      return;
+      return this;
     }
     this.setPos(lastX, lastY);
-    const parent = lastSprite.parent;
+    const { parent } = lastSprite;
     if (parent) {
       parent.removeChild(lastSprite);
       parent.addChild(this.sprite);
@@ -322,7 +327,7 @@ export default class IObject {
     const playing = sprite instanceof AnimatedSprite ? sprite.playing : false;
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        if ( playing && sprite instanceof AnimatedSprite ) {
+        if (playing && sprite instanceof AnimatedSprite) {
           sprite.play();
         }
         resolve();

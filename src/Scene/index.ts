@@ -1,47 +1,65 @@
 import throttle from 'lodash-es/throttle';
-import { Application, Container, FederatedPointerEvent, Sprite } from 'pixi.js';
-import { IObject } from '..';
+import {
+  Application, Container, FederatedPointerEvent, Sprite,
+} from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { TILE_SIZE } from '../Object/Tile';
 import { getAcc, isIntersecting } from './Calc';
-import ISceneEvent, { ISceneEventType } from './Event';
 import { getTalkBox } from './TalkBox';
+import IObject from '../Object';
 
 const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
 
 type SceneInfo = {
   margin: number;
-}
+};
 
-type Status = 'idle' |'talking';
+type Status = 'idle' | 'talking';
+
+export type ISceneEventType = 'start';
 
 export default class IScene extends EventTarget {
   private status: Status = 'idle';
+
   private container: Container;
+
   private width: number;
+
   private height: number;
+
   private app?: Application;
+
   private margin: number;
+
   private player?: IObject;
+
   private controller?: Sprite;
+
   private blockingObjectList: IObject[];
 
-  constructor(private name: string, private tiles: ITile[][], private objectList: IObject[], info?: SceneInfo) {
+  constructor(
+    private name: string,
+    private tiles: ITile[][],
+    private objectList: IObject[],
+    info?: SceneInfo,
+  ) {
     super();
     this.container = new Container();
     this.container.sortableChildren = true;
     this.width = 0;
     this.height = 0;
-    this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
     this.margin = info?.margin ?? DEFAULT_MARGIN;
+    this.blockingObjectList = tiles.reduce(
+      (acc, items) => acc.concat(items),
+    ).concat(objectList).filter((obj) => !obj.isPassable());
   }
 
   public addEventListener(type: ISceneEventType, callback: () => void) {
     super.addEventListener(type, callback);
   }
 
-  public dispatchEvent(event: ISceneEvent) {
+  public dispatchEvent(event: CustomEvent) {
     super.dispatchEvent(event);
     return true;
   }
@@ -60,11 +78,11 @@ export default class IScene extends EventTarget {
 
   public load() {
     return Promise.all([
-      ...this.tiles.reduce((acc, item) => acc.concat(item)).map(tile => tile.load()),
+      ...this.tiles.reduce((acc, item) => acc.concat(item)).map((tile) => tile.load()),
       ...this.objectList.map((obj) => obj.load())]);
   }
 
-  public drawMap(){
+  public drawMap() {
     this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
       tile.setPos(colIdx * TILE_SIZE, rowIdx * TILE_SIZE, -TILE_SIZE);
       tile.attachAt(this.container);
@@ -93,7 +111,7 @@ export default class IScene extends EventTarget {
     }
     if (!this.controller) {
       const { width: appWidth, height: appHeight } = this.getApplication().view;
-      let joystickId: undefined | number = undefined;
+      let joystickId: undefined | number;
       let [startX, startY] = [0, 0];
       let [deltaX, deltaY] = [0, 0];
 
@@ -102,7 +120,7 @@ export default class IScene extends EventTarget {
       this.controller.width = appWidth;
       this.controller.height = appHeight;
 
-      const ticker = this.getApplication().ticker;
+      const { ticker } = this.getApplication();
       const tick = () => {
         const nextX = this.getObjectNextX(player, deltaX);
         const nextY = this.getObjectNextY(player, deltaY);
@@ -111,7 +129,6 @@ export default class IScene extends EventTarget {
       };
 
       const onTouchStart = (evt: FederatedPointerEvent) => {
-
         const { x, y } = evt.global;
         if (x < appWidth / 2) {
           // case:: joystick on
@@ -193,8 +210,10 @@ export default class IScene extends EventTarget {
       if (obj === target) {
         return false;
       }
-      return isIntersecting([nextX, curY, width, height],
-        obj.getCollisionCoords());
+      return isIntersecting(
+        [nextX, curY, width, height],
+        obj.getCollisionCoords(),
+      );
     });
 
     if (blockingObj) {
@@ -219,8 +238,7 @@ export default class IScene extends EventTarget {
         if (obj === target) {
           return false;
         }
-        return isIntersecting(
-          [curX, nextY, width, height], obj.getCollisionCoords());
+        return isIntersecting([curX, nextY, width, height], obj.getCollisionCoords());
       });
 
     if (blockingObj) {
@@ -231,7 +249,7 @@ export default class IScene extends EventTarget {
   }
 
   private getInteraction() {
-    const player = this.player;
+    const { player } = this;
     if (!player) {
       throw new Error(`[scene: ${this.name}] no player`);
     }
@@ -245,28 +263,28 @@ export default class IScene extends EventTarget {
     const target = this.objectList.find((obj) => {
       const [oX, oY] = obj.getPos();
       switch (playerDirection) {
-      case 'down':
-        return (
-          Math.abs(cCenterX - (oX + obj.getWidth() / 2))
+        case 'down':
+          return (
+            Math.abs(cCenterX - (oX + obj.getWidth() / 2))
                       < REACTION_OVERLAP_THRESHOLD && Math.abs(py + cHeight - oY) < 2
-        );
-      case 'up':
-        return (
-          Math.abs(cCenterX - (oX + obj.getWidth() / 2))
+          );
+        case 'up':
+          return (
+            Math.abs(cCenterX - (oX + obj.getWidth() / 2))
                       < REACTION_OVERLAP_THRESHOLD && Math.abs(oY + obj.getHeight() - py) < 2
-        );
-      case 'left':
-        return (
-          Math.abs(cCenterY - (oY + obj.getHeight() / 2))
+          );
+        case 'left':
+          return (
+            Math.abs(cCenterY - (oY + obj.getHeight() / 2))
                       < REACTION_OVERLAP_THRESHOLD && Math.abs(oX + obj.getWidth() - px) < 2
-        );
-      case 'right':
-        return (
-          Math.abs(cCenterY - (oY + obj.getHeight() / 2))
+          );
+        case 'right':
+          return (
+            Math.abs(cCenterY - (oY + obj.getHeight() / 2))
                       < REACTION_OVERLAP_THRESHOLD && Math.abs(px + pWidth - oX) < 2
-        );
-      default:
-        return false;
+          );
+        default:
+          return false;
       }
     });
     if (!target) {
@@ -277,7 +295,7 @@ export default class IScene extends EventTarget {
 
   public talk(speaker: IObject, message: string) {
     this.status = 'talking';
-    const player = this.player;
+    const { player } = this;
     return new Promise<void>((resolve) => {
       const app = this.getApplication();
       const talkBox = getTalkBox(speaker, message, app.view);
@@ -303,5 +321,4 @@ export default class IScene extends EventTarget {
       app.stage.addChild(talkBox);
     });
   }
-
 }

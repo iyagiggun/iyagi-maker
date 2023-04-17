@@ -16,6 +16,7 @@ const getMessageStyle = (width) => new pixi_js_1.TextStyle({
     wordWrapWidth: width - 40,
     fill: [0xffffff, 0xaaaaaa],
 });
+// eslint-disable-next-line import/prefer-default-export
 const getTalkBox = (speaker, message, { width, height }) => {
     const talkBox = new pixi_js_1.Graphics();
     const talkBoxWidth = Math.round(width / 2);

@@ -1,4 +1,6 @@
-import { Graphics, Sprite, Text, TextStyle } from 'pixi.js';
+import {
+  Graphics, Sprite, Text, TextStyle,
+} from 'pixi.js';
 import IObject from '../Object';
 
 const STYLE_NAME = new TextStyle({
@@ -17,7 +19,12 @@ const getMessageStyle = (width: number) => new TextStyle({
   fill: [0xffffff, 0xaaaaaa],
 });
 
-export const getTalkBox = (speaker: IObject, message: string, { width, height }: { width: number, height: number }) => {
+// eslint-disable-next-line import/prefer-default-export
+export const getTalkBox = (
+  speaker: IObject,
+  message: string,
+  { width, height }: { width: number, height: number },
+) => {
   const talkBox = new Graphics();
   const talkBoxWidth = Math.round(width / 2);
 

@@ -1,10 +1,10 @@
 import { Application } from 'pixi.js';
-import { IObject } from '..';
 import ITile from '../Object/Tile';
-import ISceneEvent, { ISceneEventType } from './Event';
+import IObject from '../Object';
 declare type SceneInfo = {
     margin: number;
 };
+export declare type ISceneEventType = 'start';
 export default class IScene extends EventTarget {
     private name;
     private tiles;
@@ -20,7 +20,7 @@ export default class IScene extends EventTarget {
     private blockingObjectList;
     constructor(name: string, tiles: ITile[][], objectList: IObject[], info?: SceneInfo);
     addEventListener(type: ISceneEventType, callback: () => void): void;
-    dispatchEvent(event: ISceneEvent): boolean;
+    dispatchEvent(event: CustomEvent): boolean;
     private getApplication;
     setApplication(app: Application): void;
     load(): Promise<void[]>;

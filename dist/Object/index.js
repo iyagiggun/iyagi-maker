@@ -9,14 +9,14 @@ const coordsListToFrame = (prefix) => (coordsList) => {
     if (!coordsList) {
         return {};
     }
-    return coordsList.reduce((frames, [x, y, w, h], idx) => {
-        return {
-            ...frames,
-            [`${prefix}-${idx}`]: {
-                frame: { x, y, w, h }
-            }
-        };
-    }, {});
+    return coordsList.reduce((frames, [x, y, w, h], idx) => ({
+        ...frames,
+        [`${prefix}-${idx}`]: {
+            frame: {
+                x, y, w, h,
+            },
+        },
+    }), {});
 };
 const getSprite = (frameKeyList) => {
     if (frameKeyList.length === 1) {
@@ -47,14 +47,14 @@ class IObject {
             up: coordsListToFrame(`${this.name}-up`)((_a = this.objInfo.up) === null || _a === void 0 ? void 0 : _a.coordsList),
             down: coordsListToFrame(`${this.name}-down`)(this.objInfo.down.coordsList),
             left: coordsListToFrame(`${this.name}-left`)((_b = this.objInfo.left) === null || _b === void 0 ? void 0 : _b.coordsList),
-            right: coordsListToFrame(`${this.name}-right`)((_c = this.objInfo.right) === null || _c === void 0 ? void 0 : _c.coordsList)
+            right: coordsListToFrame(`${this.name}-right`)((_c = this.objInfo.right) === null || _c === void 0 ? void 0 : _c.coordsList),
         };
     }
     async load() {
         var _a;
         // case: loaded
         if (this.sprite) {
-            return Promise.resolve();
+            return;
         }
         // case: still not loaded
         // Load Texture
@@ -71,7 +71,7 @@ class IObject {
             }, {}),
             meta: {
                 scale: '1',
-            }
+            },
         }).parse();
         this.upS = getSprite(Object.keys(dirFrames.up));
         this.downS = getSprite(Object.keys(dirFrames.down));
@@ -79,8 +79,8 @@ class IObject {
         this.rightS = getSprite(Object.keys(dirFrames.right));
         this.setDirection('down');
         this.getSprite().visible = (_a = this.objInfo.visible) !== null && _a !== void 0 ? _a : true;
-        const [posX, posY] = this.objInfo.pos || [0, 0];
-        this.setPos(posX, posY);
+        const [posX, posY, zMod] = this.objInfo.pos || [0, 0];
+        this.setPos(posX, posY, zMod);
         // Load Photo
         const photoInfo = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
         const photoKeys = Object.keys(photoInfo);
@@ -142,12 +142,12 @@ class IObject {
         const { x: spriteX, y: spriteY } = this.getSprite();
         return [spriteX + modX, spriteY + modY];
     }
-    setPos(x, y, zIndexGap = 0) {
+    setPos(x, y, zMod = 0) {
         const [modX, modY] = this.getCollisionMod();
         const sprite = this.getSprite();
         sprite.x = x - modX;
         sprite.y = y - modY;
-        sprite.zIndex = y + zIndexGap;
+        sprite.zIndex = y + zMod;
     }
     getWidth() {
         return this.getCollisionMod()[Calc_1.COORDS_W_IDX];
@@ -210,10 +210,10 @@ class IObject {
             throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
         }
         if (!lastSprite) {
-            return;
+            return this;
         }
         this.setPos(lastX, lastY);
-        const parent = lastSprite.parent;
+        const { parent } = lastSprite;
         if (parent) {
             parent.removeChild(lastSprite);
             parent.addChild(this.sprite);

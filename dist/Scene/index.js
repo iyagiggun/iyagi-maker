@@ -23,8 +23,8 @@ class IScene extends EventTarget {
         this.container.sortableChildren = true;
         this.width = 0;
         this.height = 0;
-        this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
         this.margin = (_a = info === null || info === void 0 ? void 0 : info.margin) !== null && _a !== void 0 ? _a : DEFAULT_MARGIN;
+        this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
     }
     addEventListener(type, callback) {
         super.addEventListener(type, callback);
@@ -45,7 +45,7 @@ class IScene extends EventTarget {
     }
     load() {
         return Promise.all([
-            ...this.tiles.reduce((acc, item) => acc.concat(item)).map(tile => tile.load()),
+            ...this.tiles.reduce((acc, item) => acc.concat(item)).map((tile) => tile.load()),
             ...this.objectList.map((obj) => obj.load())
         ]);
     }
@@ -76,14 +76,14 @@ class IScene extends EventTarget {
         }
         if (!this.controller) {
             const { width: appWidth, height: appHeight } = this.getApplication().view;
-            let joystickId = undefined;
+            let joystickId;
             let [startX, startY] = [0, 0];
             let [deltaX, deltaY] = [0, 0];
             const controller = pixi_js_1.Sprite.from(Constant_1.TRANSPARENT_1PX_IMG);
             this.controller = controller;
             this.controller.width = appWidth;
             this.controller.height = appHeight;
-            const ticker = this.getApplication().ticker;
+            const { ticker } = this.getApplication();
             const tick = () => {
                 const nextX = this.getObjectNextX(player, deltaX);
                 const nextY = this.getObjectNextY(player, deltaY);
@@ -199,7 +199,7 @@ class IScene extends EventTarget {
         return nextY;
     }
     getInteraction() {
-        const player = this.player;
+        const { player } = this;
         if (!player) {
             throw new Error(`[scene: ${this.name}] no player`);
         }
@@ -235,7 +235,7 @@ class IScene extends EventTarget {
     }
     talk(speaker, message) {
         this.status = 'talking';
-        const player = this.player;
+        const { player } = this;
         return new Promise((resolve) => {
             const app = this.getApplication();
             const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);

@@ -1,9 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const __1 = require("../..");
-class ICharacter extends __1.IObject {
-    constructor(name, objInfo) {
-        super(name, objInfo);
-    }
+const __1 = __importDefault(require(".."));
+class ICharacter extends __1.default {
 }
 exports.default = ICharacter;

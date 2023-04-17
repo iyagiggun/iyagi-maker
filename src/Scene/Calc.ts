@@ -1,5 +1,4 @@
-
-export type Coords = number[]
+export type Coords = number[];
 
 export const COORDS_X_IDX = 0;
 export const COORDS_Y_IDX = 1;
@@ -35,7 +34,9 @@ const isOverlapIn1D = (
   return true;
 };
 
-export const isIntersecting = ( [x1, y1, width1, height1]: Coords, [x2, y2, width2, height2]: Coords
+export const isIntersecting = (
+  [x1, y1, width1, height1]: Coords,
+  [x2, y2, width2, height2]: Coords,
 ) => isOverlapIn1D(
   x1,
   x1 + width1,

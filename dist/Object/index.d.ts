@@ -15,7 +15,7 @@ export declare type IObjectInfo = {
     down: SpriteInfo;
     left?: SpriteInfo;
     right?: SpriteInfo;
-    pos?: [x: number, y: number];
+    pos?: [x: number, y: number, z?: number];
     visible?: boolean;
     passable?: boolean;
 };
@@ -47,14 +47,14 @@ export default class IObject {
     isPassable(): boolean;
     private getTexture;
     getPos(): number[];
-    setPos(x: number, y: number, zIndexGap?: number): void;
+    setPos(x: number, y: number, zMod?: number): void;
     getWidth(): number;
     getHeight(): number;
     getGlobalPos(): number[];
     getCollisionCoords(): number[];
     getDirection(): Direction;
-    changeDirection(deltaX: number, deltaY: number): this | undefined;
-    setDirection(direction: Direction): this | undefined;
+    changeDirection(deltaX: number, deltaY: number): this;
+    setDirection(direction: Direction): this;
     play(_speed: number): void;
     isPlaying(): boolean;
     stop(): void;
