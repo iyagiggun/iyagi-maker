@@ -50,12 +50,15 @@ class IScene extends EventTarget {
         ]);
     }
     drawMap() {
+        // add tile
         this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-            tile.setPos(colIdx * Tile_1.TILE_SIZE, rowIdx * Tile_1.TILE_SIZE, -Tile_1.TILE_SIZE);
+            tile.setPos(colIdx * Tile_1.I_TILE_SIZE, rowIdx * Tile_1.I_TILE_SIZE, -Tile_1.I_TILE_SIZE);
             tile.attachAt(this.container);
         }));
+        // Scene size is depend on tile size
         this.width = this.container.width;
         this.height = this.container.height;
+        // add object
         this.objectList.forEach((obj) => {
             obj.attachAt(this.container);
         });

@@ -3,7 +3,7 @@ import {
   Application, Container, FederatedPointerEvent, Sprite,
 } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
-import ITile, { TILE_SIZE } from '../Object/Tile';
+import ITile, { I_TILE_SIZE } from '../Object/Tile';
 import { getAcc, isIntersecting } from './Calc';
 import { getTalkBox } from './TalkBox';
 import IObject from '../Object';
@@ -83,12 +83,15 @@ export default class IScene extends EventTarget {
   }
 
   public drawMap() {
+    // add tile
     this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-      tile.setPos(colIdx * TILE_SIZE, rowIdx * TILE_SIZE, -TILE_SIZE);
+      tile.setPos(colIdx * I_TILE_SIZE, rowIdx * I_TILE_SIZE, -I_TILE_SIZE);
       tile.attachAt(this.container);
     }));
+    // Scene size is depend on tile size
     this.width = this.container.width;
     this.height = this.container.height;
+    // add object
     this.objectList.forEach((obj) => {
       obj.attachAt(this.container);
     });

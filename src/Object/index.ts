@@ -212,7 +212,7 @@ export default class IObject {
     const sprite = this.getSprite();
     sprite.x = x - modX;
     sprite.y = y - modY;
-    sprite.zIndex = y + zMod;
+    sprite.zIndex = sprite.y + sprite.height + zMod;
   }
 
   public getWidth() {

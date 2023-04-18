@@ -147,7 +147,7 @@ class IObject {
         const sprite = this.getSprite();
         sprite.x = x - modX;
         sprite.y = y - modY;
-        sprite.zIndex = y + zMod;
+        sprite.zIndex = sprite.y + sprite.height + zMod;
     }
     getWidth() {
         return this.getCollisionMod()[Calc_1.COORDS_W_IDX];
