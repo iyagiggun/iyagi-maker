@@ -4,7 +4,7 @@ declare type SpriteInfo = {
     coordsList: Coords[];
     collisionCoords?: Coords;
 };
-declare type Direction = 'up' | 'down' | 'left' | 'right';
+export declare type IDirection = 'up' | 'down' | 'left' | 'right';
 export declare type IObjectInfo = {
     photoInfo?: {
         default: string;
@@ -16,6 +16,7 @@ export declare type IObjectInfo = {
     left?: SpriteInfo;
     right?: SpriteInfo;
     pos?: [x: number, y: number, z?: number];
+    dir?: IDirection;
     visible?: boolean;
     passable?: boolean;
 };
@@ -52,9 +53,9 @@ export default class IObject {
     getHeight(): number;
     getGlobalPos(): number[];
     getCollisionCoords(): number[];
-    getDirection(): Direction;
+    getDirection(): IDirection;
     changeDirection(deltaX: number, deltaY: number): this;
-    setDirection(direction: Direction): this;
+    setDirection(direction: IDirection): this;
     play(_speed: number): void;
     isPlaying(): boolean;
     stop(): void;

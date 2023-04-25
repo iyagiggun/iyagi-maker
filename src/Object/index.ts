@@ -9,7 +9,7 @@ type SpriteInfo = {
   collisionCoords?: Coords;
 };
 
-type Direction = 'up' | 'down' | 'left' | 'right';
+export type IDirection = 'up' | 'down' | 'left' | 'right';
 
 export type IObjectInfo = {
   photoInfo?: {
@@ -24,6 +24,7 @@ export type IObjectInfo = {
   right?: SpriteInfo;
 
   pos?: [x: number, y: number, z?: number];
+  dir?: IDirection;
 
   visible?: boolean;
   passable?: boolean;
@@ -128,7 +129,7 @@ export default class IObject {
     this.leftS = getSprite(Object.keys(dirFrames.left));
     this.rightS = getSprite(Object.keys(dirFrames.right));
 
-    this.setDirection('down');
+    this.setDirection(this.objInfo.dir || 'down');
     this.getSprite().visible = this.objInfo.visible ?? true;
 
     const [posX, posY, zMod] = this.objInfo.pos || [0, 0];
@@ -235,7 +236,7 @@ export default class IObject {
     return [x, y, colsW, colsH];
   }
 
-  public getDirection(): Direction {
+  public getDirection(): IDirection {
     switch (this.sprite) {
       case this.upS:
         return 'up';
@@ -254,7 +255,7 @@ export default class IObject {
     return this.setDirection(getDirection(deltaX, deltaY));
   }
 
-  public setDirection(direction: Direction) {
+  public setDirection(direction: IDirection) {
     const lastSprite = this.sprite;
     const [lastX, lastY] = lastSprite ? this.getPos() : [];
     switch (direction) {

@@ -241,7 +241,7 @@ class IScene extends EventTarget {
         const { player } = this;
         return new Promise((resolve) => {
             const app = this.getApplication();
-            const talkBox = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
+            const { talkBox, talkEndPromise } = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
             const lastContainerX = this.container.x;
             const minusX = talkBox.width / 2;
             const speakerGlobalX = speaker.getGlobalPos()[0];
@@ -251,8 +251,8 @@ class IScene extends EventTarget {
             else if (speakerGlobalX + speaker.getWidth() > minusX) {
                 this.container.x = lastContainerX - minusX;
             }
-            talkBox.interactive = true;
-            talkBox.addEventListener('touchstart', () => {
+            app.stage.addChild(talkBox);
+            talkEndPromise.then(() => {
                 app.stage.removeChild(talkBox);
                 this.container.x = lastContainerX;
                 this.status = 'idle';
@@ -261,7 +261,6 @@ class IScene extends EventTarget {
                 }
                 resolve();
             });
-            app.stage.addChild(talkBox);
         });
     }
 }

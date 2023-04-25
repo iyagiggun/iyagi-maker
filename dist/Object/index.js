@@ -77,7 +77,7 @@ class IObject {
         this.downS = getSprite(Object.keys(dirFrames.down));
         this.leftS = getSprite(Object.keys(dirFrames.left));
         this.rightS = getSprite(Object.keys(dirFrames.right));
-        this.setDirection('down');
+        this.setDirection(this.objInfo.dir || 'down');
         this.getSprite().visible = (_a = this.objInfo.visible) !== null && _a !== void 0 ? _a : true;
         const [posX, posY, zMod] = this.objInfo.pos || [0, 0];
         this.setPos(posX, posY, zMod);

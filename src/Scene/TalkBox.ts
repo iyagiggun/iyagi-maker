@@ -25,15 +25,16 @@ export const getTalkBox = (
   message: string,
   { width, height }: { width: number, height: number },
 ) => {
-  const talkBox = new Graphics();
-  const talkBoxWidth = Math.round(width / 2);
+  const tokens = message.split(' ');
+  let tokenStartIdx = 0;
+  let tokenEndIdx = 0;
 
-  talkBox.width = talkBoxWidth;
-  talkBox.x = talkBoxWidth;
-  talkBox.y = 0;
+  const talkBox = new Graphics();
   talkBox.beginFill(0x000000, 0.7);
-  talkBox.drawRect(0, 0, talkBoxWidth, height);
+  talkBox.drawRect(0, 0, Math.round(width / 2), height);
   talkBox.endFill();
+  talkBox.x = talkBox.width;
+  talkBox.y = 0;
 
   const photo = new Sprite(speaker.getPhoto().texture);
   photo.width = 144;
@@ -43,14 +44,45 @@ export const getTalkBox = (
   talkBox.addChild(photo);
 
   const nameText = new Text(speaker.getName(), STYLE_NAME);
-  nameText.x = 15;
-  nameText.y = photo.y + photo.height + 15;
+  nameText.x = photo.x + photo.width + 15;
+  nameText.y = photo.y;
   talkBox.addChild(nameText);
 
-  const messageText = new Text(message, getMessageStyle(talkBoxWidth));
+  const messageText = new Text('', getMessageStyle(talkBox.width));
   messageText.x = 15;
-  messageText.y = nameText.y + nameText.height + 15;
+  messageText.y = photo.y + photo.height + 15;
+
   talkBox.addChild(messageText);
 
-  return talkBox;
+  const isTextOverFlowed = () => talkBox.height > height;
+  const showText = () => {
+    while (tokenEndIdx <= tokens.length && !isTextOverFlowed()) {
+      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx).join(' ');
+      tokenEndIdx += 1;
+    }
+    if (isTextOverFlowed()) {
+      tokenEndIdx -= 1;
+      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx - 1).join(' ');
+    }
+    tokenStartIdx = tokenEndIdx;
+  };
+
+  showText();
+
+  const talkEndPromise = new Promise<void>((resolve) => {
+    talkBox.interactive = true;
+    talkBox.addEventListener('touchstart', (evt) => {
+      evt.stopPropagation();
+      if (tokenEndIdx > tokens.length) {
+        resolve();
+      } else {
+        showText();
+      }
+    });
+  });
+
+  return {
+    talkBox,
+    talkEndPromise,
+  };
 };
