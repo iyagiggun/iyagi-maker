@@ -63,15 +63,20 @@ class IScene extends EventTarget {
             obj.attachAt(this.container);
         });
     }
-    focus(target) {
+    getCameraPos(target) {
+        if (!this.objectList.includes(target)) {
+            throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
+        }
         const [targetX, targetY] = target.getPos();
         const { width: appWidth, height: appHeight } = this.getApplication().view;
         const minX = appWidth - this.width - this.margin;
         const minY = appHeight - this.height - this.margin;
         const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
         const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-        this.container.x = Math.max(Math.min(destX, this.margin), minX);
-        this.container.y = Math.max(Math.min(destY, this.margin), minY);
+        return [
+            Math.max(Math.min(destX, this.margin), minX),
+            Math.max(Math.min(destY, this.margin), minY),
+        ];
     }
     control(player) {
         if (this.status !== 'idle') {
@@ -91,7 +96,9 @@ class IScene extends EventTarget {
                 const nextX = this.getObjectNextX(player, deltaX);
                 const nextY = this.getObjectNextY(player, deltaY);
                 player.setPos(nextX, nextY);
-                this.focus(player);
+                const [cameraX, cameraY] = this.getCameraPos(player);
+                this.container.x = cameraX;
+                this.container.y = cameraY;
             };
             const onTouchStart = (evt) => {
                 const { x, y } = evt.global;
@@ -153,7 +160,9 @@ class IScene extends EventTarget {
             this.controller.addEventListener('touchend', onTouchEnd);
             this.controller.addEventListener('touchendoutside', onTouchEnd);
             this.container.parent.addChild(this.controller);
-            this.focus(player);
+            const [cameraX, cameraY] = this.getCameraPos(player);
+            this.container.x = cameraX;
+            this.container.y = cameraY;
         }
         this.controller.interactive = true;
         this.player = player;
@@ -262,6 +271,43 @@ class IScene extends EventTarget {
                 resolve();
             });
         });
+    }
+    async moveCamera(target, speed = 4) {
+        return new Promise((resolve) => {
+            const [destX, destY] = this.getCameraPos(target);
+            if (speed === 4) {
+                this.container.x = destX;
+                this.container.y = destY;
+                resolve();
+                return;
+            }
+            const diffX = destX - this.container.x;
+            const diffY = destY - this.container.y;
+            const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+            if (distance === 0) {
+                resolve();
+                return;
+            }
+            console.error('dest', target.getName(), destX, destY);
+            const moveX = Math.round((diffX * speed) / distance);
+            const moveY = Math.round((diffY * speed) / distance);
+            console.error(moveX, moveY);
+            const { ticker } = this.getApplication();
+            const tick = () => {
+                if (this.container.x === destX || this.container.y === destY) {
+                    ticker.remove(tick);
+                    resolve();
+                }
+                console.error(this.container.x, this.container.y);
+                this.container.x += moveX;
+                this.container.y += moveY;
+            };
+            ticker.add(tick);
+        });
+    }
+    // eslint-disable-next-line class-methods-use-this
+    wait(seconds) {
+        return new Promise((resolve) => { window.setTimeout(() => resolve(), seconds * 1000); });
     }
 }
 exports.default = IScene;

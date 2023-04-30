@@ -2,7 +2,7 @@ import throttle from 'lodash-es/throttle';
 import {
   Application, Container, FederatedPointerEvent, Sprite,
 } from 'pixi.js';
-import { TRANSPARENT_1PX_IMG } from '../Constant';
+import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
 import ITile, { I_TILE_SIZE } from '../Object/Tile';
 import { getAcc, isIntersecting } from './Calc';
 import { getTalkBox } from './TalkBox';
@@ -97,15 +97,20 @@ export default class IScene extends EventTarget {
     });
   }
 
-  public focus(target: IObject) {
+  private getCameraPos(target: IObject) {
+    if (!this.objectList.includes(target)) {
+      throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
+    }
     const [targetX, targetY] = target.getPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
     const minX = appWidth - this.width - this.margin;
     const minY = appHeight - this.height - this.margin;
     const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
     const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-    this.container.x = Math.max(Math.min(destX, this.margin), minX);
-    this.container.y = Math.max(Math.min(destY, this.margin), minY);
+    return [
+      Math.max(Math.min(destX, this.margin), minX),
+      Math.max(Math.min(destY, this.margin), minY),
+    ];
   }
 
   public control(player: IObject) {
@@ -128,7 +133,9 @@ export default class IScene extends EventTarget {
         const nextX = this.getObjectNextX(player, deltaX);
         const nextY = this.getObjectNextY(player, deltaY);
         player.setPos(nextX, nextY);
-        this.focus(player);
+        const [cameraX, cameraY] = this.getCameraPos(player);
+        this.container.x = cameraX;
+        this.container.y = cameraY;
       };
 
       const onTouchStart = (evt: FederatedPointerEvent) => {
@@ -194,7 +201,9 @@ export default class IScene extends EventTarget {
       this.controller.addEventListener('touchendoutside', onTouchEnd);
 
       this.container.parent.addChild(this.controller);
-      this.focus(player);
+      const [cameraX, cameraY] = this.getCameraPos(player);
+      this.container.x = cameraX;
+      this.container.y = cameraY;
     }
     this.controller.interactive = true;
     this.player = player;
@@ -322,5 +331,48 @@ export default class IScene extends EventTarget {
         resolve();
       });
     });
+  }
+
+  public async moveCamera(target: IObject, speed = 4) {
+    return new Promise<void>((resolve) => {
+      const [destX, destY] = this.getCameraPos(target);
+
+      if (speed === 4) {
+        this.container.x = destX;
+        this.container.y = destY;
+        resolve();
+        return;
+      }
+
+      const diffX = destX - this.container.x;
+      const diffY = destY - this.container.y;
+      const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+      if (distance === 0) {
+        resolve();
+        return;
+      }
+
+      console.error('dest', target.getName(), destX, destY);
+
+      const moveX = Math.round((diffX * speed) / distance);
+      const moveY = Math.round((diffY * speed) / distance);
+      console.error(moveX, moveY);
+      const { ticker } = this.getApplication();
+      const tick = () => {
+        if (this.container.x === destX || this.container.y === destY) {
+          ticker.remove(tick);
+          resolve();
+        }
+        console.error(this.container.x, this.container.y);
+        this.container.x += moveX;
+        this.container.y += moveY;
+      };
+      ticker.add(tick);
+    });
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  public wait(seconds: number) {
+    return new Promise<void>((resolve) => { window.setTimeout(() => resolve(), seconds * 1000); });
   }
 }

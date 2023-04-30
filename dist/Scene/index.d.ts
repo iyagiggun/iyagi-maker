@@ -25,11 +25,13 @@ export default class IScene extends EventTarget {
     setApplication(app: Application): void;
     load(): Promise<void[]>;
     drawMap(): void;
-    focus(target: IObject): void;
+    private getCameraPos;
     control(player: IObject): void;
     private getObjectNextX;
     private getObjectNextY;
     private getInteraction;
     talk(speaker: IObject, message: string): Promise<void>;
+    moveCamera(target: IObject, speed?: number): Promise<void>;
+    wait(seconds: number): Promise<void>;
 }
 export {};
