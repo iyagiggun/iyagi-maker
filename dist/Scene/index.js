@@ -69,14 +69,15 @@ class IScene extends EventTarget {
         }
         const [targetX, targetY] = target.getPos();
         const { width: appWidth, height: appHeight } = this.getApplication().view;
-        const minX = appWidth - this.width - this.margin;
-        const minY = appHeight - this.height - this.margin;
+        // const minX = appWidth - this.width - this.margin;
+        // const minY = appHeight - this.height - this.margin;
         const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
         const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-        return [
-            Math.max(Math.min(destX, this.margin), minX),
-            Math.max(Math.min(destY, this.margin), minY),
-        ];
+        return [destX, destY];
+        // return [
+        //   Math.max(Math.min(destX, this.margin), minX),
+        //   Math.max(Math.min(destY, this.margin), minY),
+        // ];
     }
     control(player) {
         if (this.status !== 'idle') {
@@ -272,36 +273,69 @@ class IScene extends EventTarget {
             });
         });
     }
-    async moveCamera(target, speed = 4) {
+    async moveCamera(target, speed = Infinity) {
         return new Promise((resolve) => {
             const [destX, destY] = this.getCameraPos(target);
-            if (speed === 4) {
-                this.container.x = destX;
-                this.container.y = destY;
-                resolve();
-                return;
-            }
-            const diffX = destX - this.container.x;
-            const diffY = destY - this.container.y;
-            const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
-            if (distance === 0) {
-                resolve();
-                return;
-            }
-            console.error('dest', target.getName(), destX, destY);
-            const moveX = Math.round((diffX * speed) / distance);
-            const moveY = Math.round((diffY * speed) / distance);
-            console.error(moveX, moveY);
+            const cameraSpeed = speed * 2;
             const { ticker } = this.getApplication();
             const tick = () => {
-                if (this.container.x === destX || this.container.y === destY) {
+                const curX = this.container.x;
+                const curY = this.container.y;
+                const diffX = destX - curX;
+                const diffY = destY - curY;
+                const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+                const arrived = distance < cameraSpeed;
+                if (arrived) {
+                    this.container.x = destX;
+                    this.container.y = destY;
                     ticker.remove(tick);
                     resolve();
                 }
-                console.error(this.container.x, this.container.y);
-                this.container.x += moveX;
-                this.container.y += moveY;
+                else {
+                    const deltaX = cameraSpeed * (diffX / distance);
+                    const deltaY = cameraSpeed * (diffY / distance);
+                    this.container.x += Math.round(deltaX);
+                    this.container.y += Math.round(deltaY);
+                }
             };
+            ticker.add(tick);
+        });
+    }
+    moveCharacter(target, [destX, destY], speed = 3) {
+        return new Promise((resolve) => {
+            const { ticker } = this.getApplication();
+            const tick = () => {
+                const [curX, curY] = target.getPos();
+                const diffX = destX - curX;
+                const diffY = destY - curY;
+                const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+                let arrived = distance < speed;
+                if (arrived) {
+                    target.setPos(destX, destY);
+                    target.stop();
+                }
+                else {
+                    const deltaX = speed * (diffX / distance);
+                    const deltaY = speed * (diffY / distance);
+                    const nextX = this.getObjectNextX(target, deltaX);
+                    const nextY = this.getObjectNextY(target, deltaY);
+                    target.setPos(nextX, nextY);
+                    target.changeDirection(deltaX, deltaY);
+                    target.play(speed);
+                    if (curX === nextX && curY === nextY) {
+                        arrived = true;
+                    }
+                }
+                const [cameraX, cameraY] = this.getCameraPos(target);
+                this.container.x = cameraX;
+                this.container.y = cameraY;
+                if (arrived) {
+                    ticker.remove(tick);
+                    target.stop();
+                    resolve();
+                }
+            };
+            target.play(speed);
             ticker.add(tick);
         });
     }

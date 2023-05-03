@@ -2,11 +2,11 @@ import throttle from 'lodash-es/throttle';
 import {
   Application, Container, FederatedPointerEvent, Sprite,
 } from 'pixi.js';
-import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
+import { TRANSPARENT_1PX_IMG } from '../Constant';
+import IObject from '../Object';
 import ITile, { I_TILE_SIZE } from '../Object/Tile';
 import { getAcc, isIntersecting } from './Calc';
 import { getTalkBox } from './TalkBox';
-import IObject from '../Object';
 
 const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
@@ -103,14 +103,15 @@ export default class IScene extends EventTarget {
     }
     const [targetX, targetY] = target.getPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
-    const minX = appWidth - this.width - this.margin;
-    const minY = appHeight - this.height - this.margin;
+    // const minX = appWidth - this.width - this.margin;
+    // const minY = appHeight - this.height - this.margin;
     const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
     const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
-    return [
-      Math.max(Math.min(destX, this.margin), minX),
-      Math.max(Math.min(destY, this.margin), minY),
-    ];
+    return [destX, destY];
+    // return [
+    //   Math.max(Math.min(destX, this.margin), minX),
+    //   Math.max(Math.min(destY, this.margin), minY),
+    // ];
   }
 
   public control(player: IObject) {
@@ -333,40 +334,73 @@ export default class IScene extends EventTarget {
     });
   }
 
-  public async moveCamera(target: IObject, speed = 4) {
+  public async moveCamera(target: IObject, speed = Infinity) {
     return new Promise<void>((resolve) => {
       const [destX, destY] = this.getCameraPos(target);
+      const cameraSpeed = speed * 2;
 
-      if (speed === 4) {
-        this.container.x = destX;
-        this.container.y = destY;
-        resolve();
-        return;
-      }
-
-      const diffX = destX - this.container.x;
-      const diffY = destY - this.container.y;
-      const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
-      if (distance === 0) {
-        resolve();
-        return;
-      }
-
-      console.error('dest', target.getName(), destX, destY);
-
-      const moveX = Math.round((diffX * speed) / distance);
-      const moveY = Math.round((diffY * speed) / distance);
-      console.error(moveX, moveY);
       const { ticker } = this.getApplication();
       const tick = () => {
-        if (this.container.x === destX || this.container.y === destY) {
+        const curX = this.container.x;
+        const curY = this.container.y;
+        const diffX = destX - curX;
+        const diffY = destY - curY;
+        const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+        const arrived = distance < cameraSpeed;
+        if (arrived) {
+          this.container.x = destX;
+          this.container.y = destY;
           ticker.remove(tick);
           resolve();
+        } else {
+          const deltaX = cameraSpeed * (diffX / distance);
+          const deltaY = cameraSpeed * (diffY / distance);
+          this.container.x += Math.round(deltaX);
+          this.container.y += Math.round(deltaY);
         }
-        console.error(this.container.x, this.container.y);
-        this.container.x += moveX;
-        this.container.y += moveY;
       };
+      ticker.add(tick);
+    });
+  }
+
+  public moveCharacter(target: IObject, [destX, destY]: [number, number], speed = 3) {
+    return new Promise<void>((resolve) => {
+      const { ticker } = this.getApplication();
+
+      const tick = () => {
+        const [curX, curY] = target.getPos();
+        const diffX = destX - curX;
+        const diffY = destY - curY;
+        const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+        let arrived = distance < speed;
+
+        if (arrived) {
+          target.setPos(destX, destY);
+          target.stop();
+        } else {
+          const deltaX = speed * (diffX / distance);
+          const deltaY = speed * (diffY / distance);
+          const nextX = this.getObjectNextX(target, deltaX);
+          const nextY = this.getObjectNextY(target, deltaY);
+          target.setPos(nextX, nextY);
+          target.changeDirection(deltaX, deltaY);
+          target.play(speed);
+          if (curX === nextX && curY === nextY) {
+            arrived = true;
+          }
+        }
+
+        const [cameraX, cameraY] = this.getCameraPos(target);
+        this.container.x = cameraX;
+        this.container.y = cameraY;
+
+        if (arrived) {
+          ticker.remove(tick);
+          target.stop();
+          resolve();
+        }
+      };
+      target.play(speed);
       ticker.add(tick);
     });
   }

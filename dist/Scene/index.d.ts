@@ -1,6 +1,6 @@
 import { Application } from 'pixi.js';
-import ITile from '../Object/Tile';
 import IObject from '../Object';
+import ITile from '../Object/Tile';
 declare type SceneInfo = {
     margin: number;
 };
@@ -32,6 +32,7 @@ export default class IScene extends EventTarget {
     private getInteraction;
     talk(speaker: IObject, message: string): Promise<void>;
     moveCamera(target: IObject, speed?: number): Promise<void>;
+    moveCharacter(target: IObject, [destX, destY]: [number, number], speed?: number): Promise<void>;
     wait(seconds: number): Promise<void>;
 }
 export {};
