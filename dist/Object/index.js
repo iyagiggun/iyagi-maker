@@ -148,6 +148,7 @@ class IObject {
         sprite.x = x - modX;
         sprite.y = y - modY;
         sprite.zIndex = sprite.y + sprite.height + zMod;
+        return this;
     }
     getWidth() {
         return this.getCollisionMod()[Calc_1.COORDS_W_IDX];
@@ -246,6 +247,12 @@ class IObject {
             return;
         }
         sprite.stop();
+    }
+    hide() {
+        this.getSprite().visible = false;
+    }
+    show() {
+        this.getSprite().visible = true;
     }
     wait(time = 0) {
         const sprite = this.getSprite();

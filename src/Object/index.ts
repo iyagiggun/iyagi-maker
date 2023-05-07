@@ -214,6 +214,7 @@ export default class IObject {
     sprite.x = x - modX;
     sprite.y = y - modY;
     sprite.zIndex = sprite.y + sprite.height + zMod;
+    return this;
   }
 
   public getWidth() {
@@ -321,6 +322,14 @@ export default class IObject {
       return;
     }
     sprite.stop();
+  }
+
+  public hide() {
+    this.getSprite().visible = false;
+  }
+
+  public show() {
+    this.getSprite().visible = true;
   }
 
   public wait(time = 0) {

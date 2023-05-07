@@ -48,7 +48,7 @@ export default class IObject {
     isPassable(): boolean;
     private getTexture;
     getPos(): number[];
-    setPos(x: number, y: number, zMod?: number): void;
+    setPos(x: number, y: number, zMod?: number): this;
     getWidth(): number;
     getHeight(): number;
     getGlobalPos(): number[];
@@ -59,6 +59,8 @@ export default class IObject {
     play(_speed: number): void;
     isPlaying(): boolean;
     stop(): void;
+    hide(): void;
+    show(): void;
     wait(time?: number): Promise<void>;
 }
 export {};
