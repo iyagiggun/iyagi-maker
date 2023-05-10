@@ -4,7 +4,7 @@ import {
 import IObject from '../Object';
 
 const STYLE_NAME = new TextStyle({
-  fontSize: 30,
+  fontSize: 24,
   fontStyle: 'italic',
   fontWeight: 'bold',
   fill: 0xffffff,
@@ -12,10 +12,9 @@ const STYLE_NAME = new TextStyle({
 
 const getMessageStyle = (width: number) => new TextStyle({
   fontFamily: 'Arial',
-  fontSize: 24,
-  fontWeight: '600',
+  fontSize: 18,
   wordWrap: true,
-  wordWrapWidth: width - 40,
+  wordWrapWidth: width,
   fill: [0xffffff, 0xaaaaaa],
 });
 
@@ -25,34 +24,33 @@ export const getTalkBox = (
   message: string,
   { width, height }: { width: number, height: number },
 ) => {
-  const tokens = message.split(' ');
-  let tokenStartIdx = 0;
-  let tokenEndIdx = 0;
-
   const talkBox = new Graphics();
   talkBox.beginFill(0x000000, 0.7);
-  talkBox.drawRect(0, 0, Math.round(width / 2), height);
+  talkBox.drawRect(0, 0, Math.round(width / 2) - 100, height);
   talkBox.endFill();
-  talkBox.x = talkBox.width;
+  talkBox.x = width - talkBox.width;
   talkBox.y = 0;
 
   const photo = new Sprite(speaker.getPhoto().texture);
-  photo.width = 144;
-  photo.height = 144;
-  photo.x = 15;
-  photo.y = 15;
+  photo.width = 108;
+  photo.height = 108;
+  photo.x = 12;
+  photo.y = 12;
   talkBox.addChild(photo);
 
   const nameText = new Text(speaker.getName(), STYLE_NAME);
-  nameText.x = photo.x + photo.width + 15;
-  nameText.y = photo.y;
+  nameText.x = 12;
+  nameText.y = photo.y + photo.height + 12;
   talkBox.addChild(nameText);
 
-  const messageText = new Text('', getMessageStyle(talkBox.width));
-  messageText.x = 15;
-  messageText.y = photo.y + photo.height + 15;
-
+  const messageText = new Text('', getMessageStyle(talkBox.width - 24));
+  messageText.x = 12;
+  messageText.y = nameText.y + nameText.height + 12;
   talkBox.addChild(messageText);
+
+  const tokens = message.split(' ');
+  let tokenStartIdx = 0;
+  let tokenEndIdx = 0;
 
   const isTextOverFlowed = () => talkBox.height > height;
   const showText = () => {

@@ -288,6 +288,9 @@ export default class IObject {
     this.setPos(lastX, lastY);
     const { parent } = lastSprite;
     if (parent) {
+      if (lastSprite instanceof AnimatedSprite) {
+        lastSprite.stop();
+      }
       parent.removeChild(lastSprite);
       parent.addChild(this.sprite);
     }

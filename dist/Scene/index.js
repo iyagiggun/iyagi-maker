@@ -252,19 +252,9 @@ class IScene extends EventTarget {
         return new Promise((resolve) => {
             const app = this.getApplication();
             const { talkBox, talkEndPromise } = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
-            const lastContainerX = this.container.x;
-            const minusX = talkBox.width / 2;
-            const speakerGlobalX = speaker.getGlobalPos()[0];
-            if (app.view.width - speakerGlobalX < minusX) {
-                this.container.x = lastContainerX - talkBox.width;
-            }
-            else if (speakerGlobalX + speaker.getWidth() > minusX) {
-                this.container.x = lastContainerX - minusX;
-            }
             app.stage.addChild(talkBox);
             talkEndPromise.then(() => {
                 app.stage.removeChild(talkBox);
-                this.container.x = lastContainerX;
                 this.status = 'idle';
                 if (player) {
                     this.control(player);

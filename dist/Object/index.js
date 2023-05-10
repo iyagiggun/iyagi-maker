@@ -216,6 +216,9 @@ class IObject {
         this.setPos(lastX, lastY);
         const { parent } = lastSprite;
         if (parent) {
+            if (lastSprite instanceof pixi_js_1.AnimatedSprite) {
+                lastSprite.stop();
+            }
             parent.removeChild(lastSprite);
             parent.addChild(this.sprite);
         }
