@@ -26,41 +26,44 @@ export const getTalkBox = (
 ) => {
   const talkBox = new Graphics();
   talkBox.beginFill(0x000000, 0.7);
-  talkBox.drawRect(0, 0, Math.round(width / 2) - 100, height);
+  talkBox.drawRect(0, 0, width, height / 2 - 48);
   talkBox.endFill();
-  talkBox.x = width - talkBox.width;
-  talkBox.y = 0;
+  talkBox.x = 0;
+  talkBox.y = height - talkBox.height;
 
+  const photoSize = Math.min(144, height / 2);
   const photo = new Sprite(speaker.getPhoto().texture);
-  photo.width = 108;
-  photo.height = 108;
+  photo.width = photoSize;
+  photo.height = photoSize;
   photo.x = 12;
-  photo.y = 12;
+  photo.y = talkBox.height - photoSize - 12;
   talkBox.addChild(photo);
 
   const nameText = new Text(speaker.getName(), STYLE_NAME);
-  nameText.x = 12;
-  nameText.y = photo.y + photo.height + 12;
+  nameText.x = photo.x + photo.width + 12;
+  nameText.y = 6;
   talkBox.addChild(nameText);
 
-  const messageText = new Text('', getMessageStyle(talkBox.width - 24));
-  messageText.x = 12;
-  messageText.y = nameText.y + nameText.height + 12;
+  const messageTextWidth = talkBox.width - photoSize - 36;
+  const messageText = new Text('', getMessageStyle(messageTextWidth));
+  messageText.x = photo.x + photo.width + 12;
+  messageText.y = nameText.y + nameText.height + 6;
   talkBox.addChild(messageText);
 
   const tokens = message.split(' ');
   let tokenStartIdx = 0;
   let tokenEndIdx = 0;
 
-  const isTextOverFlowed = () => talkBox.height > height;
+  const talkBoxHeight = talkBox.height;
+  const isTextOverFlowed = () => talkBox.height > talkBoxHeight;
   const showText = () => {
     while (tokenEndIdx <= tokens.length && !isTextOverFlowed()) {
-      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx).join(' ');
       tokenEndIdx += 1;
+      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx).join(' ');
     }
     if (isTextOverFlowed()) {
       tokenEndIdx -= 1;
-      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx - 1).join(' ');
+      messageText.text = tokens.slice(tokenStartIdx, tokenEndIdx).join(' ');
     }
     tokenStartIdx = tokenEndIdx;
   };

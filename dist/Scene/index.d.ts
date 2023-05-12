@@ -1,15 +1,16 @@
 import { Application } from 'pixi.js';
 import IObject from '../Object';
 import ITile from '../Object/Tile';
-declare type SceneInfo = {
+export declare type SceneInfo = {
     margin: number;
 };
+declare type ControlMode = 'battle' | 'peace';
 export declare type ISceneEventType = 'start';
-export default class IScene extends EventTarget {
+export default class Scene extends EventTarget {
     private name;
     private tiles;
-    private objectList;
     private status;
+    private controlMode;
     private container;
     private width;
     private height;
@@ -17,6 +18,7 @@ export default class IScene extends EventTarget {
     private margin;
     private player?;
     private controller?;
+    private objectList;
     private blockingObjectList;
     constructor(name: string, tiles: ITile[][], objectList: IObject[], info?: SceneInfo);
     addEventListener(type: ISceneEventType, callback: () => void): void;
@@ -25,14 +27,16 @@ export default class IScene extends EventTarget {
     setApplication(app: Application): void;
     load(): Promise<void[]>;
     drawMap(): void;
+    addObject(obj: IObject): void;
+    removeObject(obj: IObject): void;
     private getCameraPos;
-    control(player: IObject): void;
+    control(player: IObject, mode: ControlMode): void;
     private getObjectNextX;
     private getObjectNextY;
     private getInteraction;
     talk(speaker: IObject, message: string): Promise<void>;
     moveCamera(target: IObject, speed?: number): Promise<void>;
-    moveCharacter(target: IObject, [destX, destY]: [number, number], speed?: number): Promise<void>;
+    moveCharacter(target: IObject, [destX, destY]: [number, number], speed: number, chaseCamera: boolean): Promise<void>;
     wait(seconds: number): Promise<void>;
 }
 export {};

@@ -11,16 +11,19 @@ import { getTalkBox } from './TalkBox';
 const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
 
-type SceneInfo = {
+export type SceneInfo = {
   margin: number;
 };
 
-type Status = 'idle' | 'talking';
+type Status = 'idle' | 'talking' | '';
+type ControlMode = 'battle' | 'peace';
 
 export type ISceneEventType = 'start';
 
-export default class IScene extends EventTarget {
+export default class Scene extends EventTarget {
   private status: Status = 'idle';
+
+  private controlMode: ControlMode = 'peace';
 
   private container: Container;
 
@@ -36,12 +39,14 @@ export default class IScene extends EventTarget {
 
   private controller?: Sprite;
 
+  private objectList: IObject[];
+
   private blockingObjectList: IObject[];
 
   constructor(
     private name: string,
     private tiles: ITile[][],
-    private objectList: IObject[],
+    objectList: IObject[],
     info?: SceneInfo,
   ) {
     super();
@@ -50,6 +55,7 @@ export default class IScene extends EventTarget {
     this.width = 0;
     this.height = 0;
     this.margin = info?.margin ?? DEFAULT_MARGIN;
+    this.objectList = objectList;
     this.blockingObjectList = tiles.reduce(
       (acc, items) => acc.concat(items),
     ).concat(objectList).filter((obj) => !obj.isPassable());
@@ -86,15 +92,38 @@ export default class IScene extends EventTarget {
     // add tile
     this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
       tile.setPos(colIdx * I_TILE_SIZE, rowIdx * I_TILE_SIZE, -I_TILE_SIZE);
-      tile.attachAt(this.container);
+      this.container.addChild(tile.getSprite());
     }));
     // Scene size is depend on tile size
     this.width = this.container.width;
     this.height = this.container.height;
     // add object
     this.objectList.forEach((obj) => {
-      obj.attachAt(this.container);
+      this.container.addChild(obj.getSprite());
     });
+  }
+
+  public addObject(obj: IObject) {
+    if (!obj.isLoaded()) {
+      throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
+    }
+    if (this.objectList.includes(obj)) {
+      throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
+    }
+    this.objectList.push(obj);
+    if (!obj.isPassable()) {
+      this.blockingObjectList.push(obj);
+    }
+    this.container.addChild(obj.getSprite());
+  }
+
+  public removeObject(obj: IObject) {
+    if (!this.objectList.includes(obj)) {
+      throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
+    }
+    this.objectList = this.objectList.filter((_obj) => _obj !== obj);
+    this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
+    this.container.removeChild(obj.getSprite());
   }
 
   private getCameraPos(target: IObject) {
@@ -103,18 +132,12 @@ export default class IScene extends EventTarget {
     }
     const [targetX, targetY] = target.getPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
-    // const minX = appWidth - this.width - this.margin;
-    // const minY = appHeight - this.height - this.margin;
     const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
     const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
     return [destX, destY];
-    // return [
-    //   Math.max(Math.min(destX, this.margin), minX),
-    //   Math.max(Math.min(destY, this.margin), minY),
-    // ];
   }
 
-  public control(player: IObject) {
+  public control(player: IObject, mode: ControlMode) {
     if (this.status !== 'idle') {
       throw new Error(`[scene: ${this.name}] is busy. status = ${this.status}`);
     }
@@ -148,6 +171,7 @@ export default class IScene extends EventTarget {
           joystickId = evt.pointerId;
           ticker.add(tick);
         } else {
+          console.error(this.controlMode);
           // case:: interact
           const interaction = this.getInteraction();
           if (!interaction) {
@@ -206,6 +230,7 @@ export default class IScene extends EventTarget {
       this.container.x = cameraX;
       this.container.y = cameraY;
     }
+    this.controlMode = mode;
     this.controller.interactive = true;
     this.player = player;
   }
@@ -318,7 +343,7 @@ export default class IScene extends EventTarget {
         app.stage.removeChild(talkBox);
         this.status = 'idle';
         if (player) {
-          this.control(player);
+          this.control(player, this.controlMode);
         }
         resolve();
       });
@@ -354,7 +379,12 @@ export default class IScene extends EventTarget {
     });
   }
 
-  public moveCharacter(target: IObject, [destX, destY]: [number, number], speed = 3) {
+  public moveCharacter(
+    target: IObject,
+    [destX, destY]: [number, number],
+    speed: number,
+    chaseCamera: boolean,
+  ) {
     return new Promise<void>((resolve) => {
       const { ticker } = this.getApplication();
 
@@ -381,9 +411,11 @@ export default class IScene extends EventTarget {
           }
         }
 
-        const [cameraX, cameraY] = this.getCameraPos(target);
-        this.container.x = cameraX;
-        this.container.y = cameraY;
+        if (chaseCamera) {
+          const [cameraX, cameraY] = this.getCameraPos(target);
+          this.container.x = cameraX;
+          this.container.y = cameraY;
+        }
 
         if (arrived) {
           ticker.remove(tick);

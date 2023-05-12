@@ -50,10 +50,13 @@ class IObject {
             right: coordsListToFrame(`${this.name}-right`)((_c = this.objInfo.right) === null || _c === void 0 ? void 0 : _c.coordsList),
         };
     }
+    isLoaded() {
+        return !!this.sprite;
+    }
     async load() {
         var _a;
         // case: loaded
-        if (this.sprite) {
+        if (this.isLoaded()) {
             return;
         }
         // case: still not loaded
@@ -106,9 +109,6 @@ class IObject {
             throw new Error(`asset '${this.name}' is not loaded`);
         }
         return this.sprite;
-    }
-    attachAt(container) {
-        container.addChild(this.getSprite());
     }
     getCollisionMod() {
         if (!this.collisionMod) {
@@ -186,7 +186,7 @@ class IObject {
     setDirection(direction) {
         var _a, _b, _c;
         const lastSprite = this.sprite;
-        const [lastX, lastY] = lastSprite ? this.getPos() : [];
+        const [lastX, lastY] = lastSprite ? this.getPos() : [0, 0];
         switch (direction) {
             case 'up':
                 this.sprite = this.upS;

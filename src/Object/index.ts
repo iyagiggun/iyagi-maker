@@ -1,5 +1,6 @@
 import {
-  AnimatedSprite, Assets, BaseTexture, Container, Sprite, Spritesheet, Texture,
+  AnimatedSprite, Assets, BaseTexture,
+  Sprite, Spritesheet, Texture,
 } from 'pixi.js';
 import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
 import { COORDS_H_IDX, COORDS_W_IDX, Coords } from '../Scene/Calc';
@@ -100,9 +101,13 @@ export default class IObject {
     };
   }
 
+  public isLoaded() {
+    return !!this.sprite;
+  }
+
   public async load() {
     // case: loaded
-    if (this.sprite) {
+    if (this.isLoaded()) {
       return;
     }
     // case: still not loaded
@@ -159,15 +164,11 @@ export default class IObject {
     this.photo.texture = this.photoTextureMap[key];
   }
 
-  private getSprite() {
+  public getSprite() {
     if (!this.sprite) {
       throw new Error(`asset '${this.name}' is not loaded`);
     }
     return this.sprite;
-  }
-
-  public attachAt(container: Container) {
-    container.addChild(this.getSprite());
   }
 
   public getCollisionMod() {
@@ -202,7 +203,7 @@ export default class IObject {
     return textureMap[spriteUrl];
   }
 
-  public getPos() {
+  public getPos(): [number, number] {
     const [modX, modY] = this.getCollisionMod();
     const { x: spriteX, y: spriteY } = this.getSprite();
     return [spriteX + modX, spriteY + modY];
@@ -258,7 +259,7 @@ export default class IObject {
 
   public setDirection(direction: IDirection) {
     const lastSprite = this.sprite;
-    const [lastX, lastY] = lastSprite ? this.getPos() : [];
+    const [lastX, lastY] = lastSprite ? this.getPos() : [0, 0];
     switch (direction) {
       case 'up':
         this.sprite = this.upS;

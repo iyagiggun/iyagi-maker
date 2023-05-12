@@ -1,4 +1,4 @@
-import { Container, Sprite } from 'pixi.js';
+import { Sprite } from 'pixi.js';
 import { Coords } from '../Scene/Calc';
 declare type SpriteInfo = {
     coordsList: Coords[];
@@ -35,19 +35,19 @@ export default class IObject {
     private reaction?;
     constructor(name: string, objInfo: IObjectInfo);
     private getDirFrames;
+    isLoaded(): boolean;
     load(): Promise<void>;
     getName(): string;
     getPhoto(): Sprite;
     changePhoto(key: string): void;
-    private getSprite;
-    attachAt(container: Container): void;
+    getSprite(): Sprite;
     getCollisionMod(): Coords;
     setReaction(reaction: () => Promise<void>): void;
     getReaction(): (() => Promise<void>) | undefined;
     react(): Promise<void>;
     isPassable(): boolean;
     private getTexture;
-    getPos(): number[];
+    getPos(): [number, number];
     setPos(x: number, y: number, zMod?: number): this;
     getWidth(): number;
     getHeight(): number;

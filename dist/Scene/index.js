@@ -11,19 +11,20 @@ const Calc_1 = require("./Calc");
 const TalkBox_1 = require("./TalkBox");
 const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
-class IScene extends EventTarget {
+class Scene extends EventTarget {
     constructor(name, tiles, objectList, info) {
         var _a;
         super();
         this.name = name;
         this.tiles = tiles;
-        this.objectList = objectList;
         this.status = 'idle';
+        this.controlMode = 'peace';
         this.container = new pixi_js_1.Container();
         this.container.sortableChildren = true;
         this.width = 0;
         this.height = 0;
         this.margin = (_a = info === null || info === void 0 ? void 0 : info.margin) !== null && _a !== void 0 ? _a : DEFAULT_MARGIN;
+        this.objectList = objectList;
         this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
     }
     addEventListener(type, callback) {
@@ -53,15 +54,36 @@ class IScene extends EventTarget {
         // add tile
         this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
             tile.setPos(colIdx * Tile_1.I_TILE_SIZE, rowIdx * Tile_1.I_TILE_SIZE, -Tile_1.I_TILE_SIZE);
-            tile.attachAt(this.container);
+            this.container.addChild(tile.getSprite());
         }));
         // Scene size is depend on tile size
         this.width = this.container.width;
         this.height = this.container.height;
         // add object
         this.objectList.forEach((obj) => {
-            obj.attachAt(this.container);
+            this.container.addChild(obj.getSprite());
         });
+    }
+    addObject(obj) {
+        if (!obj.isLoaded()) {
+            throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
+        }
+        if (this.objectList.includes(obj)) {
+            throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
+        }
+        this.objectList.push(obj);
+        if (!obj.isPassable()) {
+            this.blockingObjectList.push(obj);
+        }
+        this.container.addChild(obj.getSprite());
+    }
+    removeObject(obj) {
+        if (!this.objectList.includes(obj)) {
+            throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
+        }
+        this.objectList = this.objectList.filter((_obj) => _obj !== obj);
+        this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
+        this.container.removeChild(obj.getSprite());
     }
     getCameraPos(target) {
         if (!this.objectList.includes(target)) {
@@ -69,17 +91,11 @@ class IScene extends EventTarget {
         }
         const [targetX, targetY] = target.getPos();
         const { width: appWidth, height: appHeight } = this.getApplication().view;
-        // const minX = appWidth - this.width - this.margin;
-        // const minY = appHeight - this.height - this.margin;
         const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
         const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
         return [destX, destY];
-        // return [
-        //   Math.max(Math.min(destX, this.margin), minX),
-        //   Math.max(Math.min(destY, this.margin), minY),
-        // ];
     }
-    control(player) {
+    control(player, mode) {
         if (this.status !== 'idle') {
             throw new Error(`[scene: ${this.name}] is busy. status = ${this.status}`);
         }
@@ -111,6 +127,7 @@ class IScene extends EventTarget {
                     ticker.add(tick);
                 }
                 else {
+                    console.error(this.controlMode);
                     // case:: interact
                     const interaction = this.getInteraction();
                     if (!interaction) {
@@ -165,6 +182,7 @@ class IScene extends EventTarget {
             this.container.x = cameraX;
             this.container.y = cameraY;
         }
+        this.controlMode = mode;
         this.controller.interactive = true;
         this.player = player;
     }
@@ -257,7 +275,7 @@ class IScene extends EventTarget {
                 app.stage.removeChild(talkBox);
                 this.status = 'idle';
                 if (player) {
-                    this.control(player);
+                    this.control(player, this.controlMode);
                 }
                 resolve();
             });
@@ -291,7 +309,7 @@ class IScene extends EventTarget {
             ticker.add(tick);
         });
     }
-    moveCharacter(target, [destX, destY], speed = 3) {
+    moveCharacter(target, [destX, destY], speed, chaseCamera) {
         return new Promise((resolve) => {
             const { ticker } = this.getApplication();
             const tick = () => {
@@ -316,9 +334,11 @@ class IScene extends EventTarget {
                         arrived = true;
                     }
                 }
-                const [cameraX, cameraY] = this.getCameraPos(target);
-                this.container.x = cameraX;
-                this.container.y = cameraY;
+                if (chaseCamera) {
+                    const [cameraX, cameraY] = this.getCameraPos(target);
+                    this.container.x = cameraX;
+                    this.container.y = cameraY;
+                }
                 if (arrived) {
                     ticker.remove(tick);
                     target.stop();
@@ -334,4 +354,4 @@ class IScene extends EventTarget {
         return new Promise((resolve) => { window.setTimeout(() => resolve(), seconds * 1000); });
     }
 }
-exports.default = IScene;
+exports.default = Scene;
