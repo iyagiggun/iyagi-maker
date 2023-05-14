@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isIntersecting = exports.getAcc = exports.COORDS_H_IDX = exports.COORDS_W_IDX = exports.COORDS_Y_IDX = exports.COORDS_X_IDX = void 0;
+exports.getDistance = exports.isIntersecting = exports.getAcc = exports.COORDS_H_IDX = exports.COORDS_W_IDX = exports.COORDS_Y_IDX = exports.COORDS_X_IDX = void 0;
 exports.COORDS_X_IDX = 0;
 exports.COORDS_Y_IDX = 1;
 exports.COORDS_W_IDX = 2;
@@ -30,3 +30,5 @@ const isOverlapIn1D = (a1, a2, b1, b2) => {
 };
 const isIntersecting = ([x1, y1, width1, height1], [x2, y2, width2, height2]) => isOverlapIn1D(x1, x1 + width1, x2, x2 + width2) && isOverlapIn1D(y1, y1 + height1, y2, y2 + height2);
 exports.isIntersecting = isIntersecting;
+const getDistance = ([x1, y1], [x2, y2]) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+exports.getDistance = getDistance;

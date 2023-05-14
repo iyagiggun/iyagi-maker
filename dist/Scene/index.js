@@ -7,7 +7,7 @@ const throttle_1 = __importDefault(require("lodash-es/throttle"));
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
 const Tile_1 = require("../Object/Tile");
-const Calc_1 = require("./Calc");
+const Coordinate_1 = require("../Utils/Coordinate");
 const TalkBox_1 = require("./TalkBox");
 const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
@@ -89,10 +89,10 @@ class Scene extends EventTarget {
         if (!this.objectList.includes(target)) {
             throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
         }
-        const [targetX, targetY] = target.getPos();
+        const [targetCenterX, targetCenterY] = target.getCenterPos();
         const { width: appWidth, height: appHeight } = this.getApplication().view;
-        const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
-        const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
+        const destX = Math.round((appWidth / 2) - targetCenterX);
+        const destY = Math.round((appHeight / 2) - targetCenterY);
         return [destX, destY];
     }
     control(player, mode) {
@@ -153,7 +153,7 @@ class Scene extends EventTarget {
                 if (distance === 0) {
                     return;
                 }
-                const acc = (0, Calc_1.getAcc)(distance);
+                const acc = (0, Coordinate_1.getAcc)(distance);
                 if (acc === 0) {
                     deltaX = 0;
                     deltaY = 0;
@@ -199,7 +199,7 @@ class Scene extends EventTarget {
             if (obj === target) {
                 return false;
             }
-            return (0, Calc_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionCoords());
+            return (0, Coordinate_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionCoords());
         });
         if (blockingObj) {
             const blockingObjX = blockingObj.getPos()[0];
@@ -221,7 +221,7 @@ class Scene extends EventTarget {
             if (obj === target) {
                 return false;
             }
-            return (0, Calc_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionCoords());
+            return (0, Coordinate_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionCoords());
         });
         if (blockingObj) {
             const blockingObjY = blockingObj.getPos()[1];

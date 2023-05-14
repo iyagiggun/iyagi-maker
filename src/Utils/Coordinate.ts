@@ -48,3 +48,8 @@ export const isIntersecting = (
   y2,
   y2 + height2,
 );
+
+export const getDistance = (
+  [x1, y1]: [number, number],
+  [x2, y2]: [number, number],
+) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);

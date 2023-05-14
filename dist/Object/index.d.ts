@@ -1,5 +1,5 @@
 import { Sprite } from 'pixi.js';
-import { Coords } from '../Scene/Calc';
+import { Coords } from '../Utils/Coordinate';
 declare type SpriteInfo = {
     coordsList: Coords[];
     collisionCoords?: Coords;
@@ -62,5 +62,11 @@ export default class IObject {
     hide(): void;
     show(): void;
     wait(time?: number): Promise<void>;
+    getCenterPos(): [number, number];
+    getCoordinateRelationship(target: IObject): {
+        distance: number;
+        xDiff: number;
+        yDiff: number;
+    };
 }
 export {};

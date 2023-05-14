@@ -5,7 +5,7 @@ import {
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import IObject from '../Object';
 import ITile, { I_TILE_SIZE } from '../Object/Tile';
-import { getAcc, isIntersecting } from './Calc';
+import { getAcc, isIntersecting } from '../Utils/Coordinate';
 import { getTalkBox } from './TalkBox';
 
 const DEFAULT_MARGIN = 30;
@@ -130,10 +130,10 @@ export default class Scene extends EventTarget {
     if (!this.objectList.includes(target)) {
       throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
     }
-    const [targetX, targetY] = target.getPos();
+    const [targetCenterX, targetCenterY] = target.getCenterPos();
     const { width: appWidth, height: appHeight } = this.getApplication().view;
-    const destX = Math.round((appWidth / 2) - targetX - (target.getWidth() / 2));
-    const destY = Math.round((appHeight / 2) - targetY - (target.getHeight() / 2));
+    const destX = Math.round((appWidth / 2) - targetCenterX);
+    const destY = Math.round((appHeight / 2) - targetCenterY);
     return [destX, destY];
   }
 

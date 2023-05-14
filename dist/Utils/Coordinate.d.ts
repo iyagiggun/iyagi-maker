@@ -5,3 +5,4 @@ export declare const COORDS_W_IDX = 2;
 export declare const COORDS_H_IDX = 3;
 export declare const getAcc: (distance: number) => 0 | 1 | 2 | 3;
 export declare const isIntersecting: ([x1, y1, width1, height1]: Coords, [x2, y2, width2, height2]: Coords) => boolean;
+export declare const getDistance: ([x1, y1]: [number, number], [x2, y2]: [number, number]) => number;
