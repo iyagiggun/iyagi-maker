@@ -1,38 +1,17 @@
 import { Application } from 'pixi.js';
 import IObject from '../Object';
-import ITile from '../Object/Tile';
-export declare type SceneInfo = {
-    margin: number;
-};
+import SceneObjectManager from './SceneObjectManager';
 declare type ControlMode = 'battle' | 'peace';
-export declare type ISceneEventType = 'start';
-export default class Scene extends EventTarget {
-    private name;
-    private tiles;
+export default class Scene extends SceneObjectManager {
     private status;
     private controlMode;
-    private container;
-    private width;
-    private height;
-    private app?;
-    private margin;
     private player?;
     private controller?;
-    private objectList;
-    private blockingObjectList;
-    constructor(name: string, tiles: ITile[][], objectList: IObject[], info?: SceneInfo);
-    addEventListener(type: ISceneEventType, callback: () => void): void;
-    dispatchEvent(event: CustomEvent): boolean;
     private getApplication;
     setApplication(app: Application): void;
-    load(): Promise<void[]>;
     drawMap(): void;
-    addObject(obj: IObject): void;
-    removeObject(obj: IObject): void;
     private getCameraPos;
     control(player: IObject, mode: ControlMode): void;
-    private getObjectNextX;
-    private getObjectNextY;
     private getInteraction;
     talk(speaker: IObject, message: string): Promise<void>;
     moveCamera(target: IObject, speed?: number): Promise<void>;

@@ -6,33 +6,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const throttle_1 = __importDefault(require("lodash-es/throttle"));
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
-const Tile_1 = require("../Object/Tile");
 const Coordinate_1 = require("../Utils/Coordinate");
+const SceneObjectManager_1 = __importDefault(require("./SceneObjectManager"));
 const TalkBox_1 = require("./TalkBox");
-const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
-class Scene extends EventTarget {
-    constructor(name, tiles, objectList, info) {
-        var _a;
-        super();
-        this.name = name;
-        this.tiles = tiles;
+class Scene extends SceneObjectManager_1.default {
+    constructor() {
+        super(...arguments);
         this.status = 'idle';
         this.controlMode = 'peace';
-        this.container = new pixi_js_1.Container();
-        this.container.sortableChildren = true;
-        this.width = 0;
-        this.height = 0;
-        this.margin = (_a = info === null || info === void 0 ? void 0 : info.margin) !== null && _a !== void 0 ? _a : DEFAULT_MARGIN;
-        this.objectList = objectList;
-        this.blockingObjectList = tiles.reduce((acc, items) => acc.concat(items)).concat(objectList).filter((obj) => !obj.isPassable());
-    }
-    addEventListener(type, callback) {
-        super.addEventListener(type, callback);
-    }
-    dispatchEvent(event) {
-        super.dispatchEvent(event);
-        return true;
     }
     getApplication() {
         if (!this.app) {
@@ -44,46 +26,11 @@ class Scene extends EventTarget {
         this.app = app;
         this.app.stage.addChild(this.container);
     }
-    load() {
-        return Promise.all([
-            ...this.tiles.reduce((acc, item) => acc.concat(item)).map((tile) => tile.load()),
-            ...this.objectList.map((obj) => obj.load())
-        ]);
-    }
     drawMap() {
-        // add tile
-        this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-            tile.setPos(colIdx * Tile_1.I_TILE_SIZE, rowIdx * Tile_1.I_TILE_SIZE, -Tile_1.I_TILE_SIZE);
-            this.container.addChild(tile.getSprite());
-        }));
-        // Scene size is depend on tile size
-        this.width = this.container.width;
-        this.height = this.container.height;
         // add object
         this.objectList.forEach((obj) => {
             this.container.addChild(obj.getSprite());
         });
-    }
-    addObject(obj) {
-        if (!obj.isLoaded()) {
-            throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
-        }
-        if (this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
-        }
-        this.objectList.push(obj);
-        if (!obj.isPassable()) {
-            this.blockingObjectList.push(obj);
-        }
-        this.container.addChild(obj.getSprite());
-    }
-    removeObject(obj) {
-        if (!this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
-        }
-        this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-        this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-        this.container.removeChild(obj.getSprite());
     }
     getCameraPos(target) {
         if (!this.objectList.includes(target)) {
@@ -185,49 +132,6 @@ class Scene extends EventTarget {
         this.controlMode = mode;
         this.controller.interactive = true;
         this.player = player;
-    }
-    getObjectNextX(target, dist) {
-        const [curX, curY] = target.getPos();
-        const width = target.getWidth();
-        const height = target.getHeight();
-        const nextX = curX + dist;
-        // map out check
-        if (nextX < 0 || nextX + width > this.width) {
-            return curX;
-        }
-        const blockingObj = this.blockingObjectList.find((obj) => {
-            if (obj === target) {
-                return false;
-            }
-            return (0, Coordinate_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionCoords());
-        });
-        if (blockingObj) {
-            const blockingObjX = blockingObj.getPos()[0];
-            return curX < blockingObjX ? blockingObjX - width : blockingObjX + blockingObj.getWidth();
-        }
-        return nextX;
-    }
-    getObjectNextY(target, dist) {
-        const [curX, curY] = target.getPos();
-        const width = target.getWidth();
-        const height = target.getHeight();
-        const nextY = curY + dist;
-        // map out check
-        if (nextY < 0 || nextY + height > this.height) {
-            return curY;
-        }
-        const blockingObj = this.blockingObjectList
-            .find((obj) => {
-            if (obj === target) {
-                return false;
-            }
-            return (0, Coordinate_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionCoords());
-        });
-        if (blockingObj) {
-            const blockingObjY = blockingObj.getPos()[1];
-            return curY < blockingObjY ? blockingObjY - height : blockingObjY + blockingObj.getHeight();
-        }
-        return nextY;
     }
     getInteraction() {
         const { player } = this;

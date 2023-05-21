@@ -1,11 +1,11 @@
 import throttle from 'lodash-es/throttle';
 import {
-  Application, Container, FederatedPointerEvent, Sprite,
+  Application, FederatedPointerEvent, Sprite,
 } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import IObject from '../Object';
-import { getAcc, isIntersecting } from '../Utils/Coordinate';
-import SceneEvent from './SceneEvent';
+import { getAcc } from '../Utils/Coordinate';
+import SceneObjectManager from './SceneObjectManager';
 import { getTalkBox } from './TalkBox';
 
 const REACTION_OVERLAP_THRESHOLD = 10;
@@ -13,33 +13,14 @@ const REACTION_OVERLAP_THRESHOLD = 10;
 type Status = 'idle' | 'talking' | '';
 type ControlMode = 'battle' | 'peace';
 
-export default class Scene extends SceneEvent {
+export default class Scene extends SceneObjectManager {
   private status: Status = 'idle';
 
   private controlMode: ControlMode = 'peace';
 
-  private container: Container;
-
-  private app?: Application;
-
   private player?: IObject;
 
   private controller?: Sprite;
-
-  private objectList: IObject[];
-
-  private blockingObjectList: IObject[];
-
-  constructor(
-    private name: string,
-    objectList: IObject[],
-  ) {
-    super();
-    this.container = new Container();
-    this.container.sortableChildren = true;
-    this.objectList = objectList;
-    this.blockingObjectList = objectList.filter((obj) => !obj.isPassable());
-  }
 
   private getApplication() {
     if (!this.app) {
@@ -53,38 +34,11 @@ export default class Scene extends SceneEvent {
     this.app.stage.addChild(this.container);
   }
 
-  public load() {
-    return Promise.all(this.objectList.map((obj) => obj.load()));
-  }
-
   public drawMap() {
     // add object
     this.objectList.forEach((obj) => {
       this.container.addChild(obj.getSprite());
     });
-  }
-
-  public addObject(obj: IObject) {
-    if (!obj.isLoaded()) {
-      throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
-    }
-    if (this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
-    }
-    this.objectList.push(obj);
-    if (!obj.isPassable()) {
-      this.blockingObjectList.push(obj);
-    }
-    this.container.addChild(obj.getSprite());
-  }
-
-  public removeObject(obj: IObject) {
-    if (!this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
-    }
-    this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-    this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-    this.container.removeChild(obj.getSprite());
   }
 
   private getCameraPos(target: IObject) {
@@ -194,49 +148,6 @@ export default class Scene extends SceneEvent {
     this.controlMode = mode;
     this.controller.interactive = true;
     this.player = player;
-  }
-
-  private getObjectNextX(target: IObject, dist: number) {
-    const [curX, curY] = target.getPos();
-    const width = target.getWidth();
-    const height = target.getHeight();
-    const nextX = curX + dist;
-    const blockingObj = this.blockingObjectList.find((obj) => {
-      if (obj === target) {
-        return false;
-      }
-      return isIntersecting(
-        [nextX, curY, width, height],
-        obj.getCollisionCoords(),
-      );
-    });
-
-    if (blockingObj) {
-      const blockingObjX = blockingObj.getPos()[0];
-      return curX < blockingObjX ? blockingObjX - width : blockingObjX + blockingObj.getWidth();
-    }
-    return nextX;
-  }
-
-  private getObjectNextY(target: IObject, dist: number) {
-    const [curX, curY] = target.getPos();
-    const width = target.getWidth();
-    const height = target.getHeight();
-    const nextY = curY + dist;
-
-    const blockingObj = this.blockingObjectList
-      .find((obj) => {
-        if (obj === target) {
-          return false;
-        }
-        return isIntersecting([curX, nextY, width, height], obj.getCollisionCoords());
-      });
-
-    if (blockingObj) {
-      const blockingObjY = blockingObj.getPos()[1];
-      return curY < blockingObjY ? blockingObjY - height : blockingObjY + blockingObj.getHeight();
-    }
-    return nextY;
   }
 
   private getInteraction() {
