@@ -4,36 +4,23 @@ import {
 } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 import IObject from '../Object';
-import ITile, { I_TILE_SIZE } from '../Object/Tile';
 import { getAcc, isIntersecting } from '../Utils/Coordinate';
+import SceneEvent from './SceneEvent';
 import { getTalkBox } from './TalkBox';
 
-const DEFAULT_MARGIN = 30;
 const REACTION_OVERLAP_THRESHOLD = 10;
-
-export type SceneInfo = {
-  margin: number;
-};
 
 type Status = 'idle' | 'talking' | '';
 type ControlMode = 'battle' | 'peace';
 
-export type ISceneEventType = 'start';
-
-export default class Scene extends EventTarget {
+export default class Scene extends SceneEvent {
   private status: Status = 'idle';
 
   private controlMode: ControlMode = 'peace';
 
   private container: Container;
 
-  private width: number;
-
-  private height: number;
-
   private app?: Application;
-
-  private margin: number;
 
   private player?: IObject;
 
@@ -45,29 +32,13 @@ export default class Scene extends EventTarget {
 
   constructor(
     private name: string,
-    private tiles: ITile[][],
     objectList: IObject[],
-    info?: SceneInfo,
   ) {
     super();
     this.container = new Container();
     this.container.sortableChildren = true;
-    this.width = 0;
-    this.height = 0;
-    this.margin = info?.margin ?? DEFAULT_MARGIN;
     this.objectList = objectList;
-    this.blockingObjectList = tiles.reduce(
-      (acc, items) => acc.concat(items),
-    ).concat(objectList).filter((obj) => !obj.isPassable());
-  }
-
-  public addEventListener(type: ISceneEventType, callback: () => void) {
-    super.addEventListener(type, callback);
-  }
-
-  public dispatchEvent(event: CustomEvent) {
-    super.dispatchEvent(event);
-    return true;
+    this.blockingObjectList = objectList.filter((obj) => !obj.isPassable());
   }
 
   private getApplication() {
@@ -83,20 +54,10 @@ export default class Scene extends EventTarget {
   }
 
   public load() {
-    return Promise.all([
-      ...this.tiles.reduce((acc, item) => acc.concat(item)).map((tile) => tile.load()),
-      ...this.objectList.map((obj) => obj.load())]);
+    return Promise.all(this.objectList.map((obj) => obj.load()));
   }
 
   public drawMap() {
-    // add tile
-    this.tiles.forEach((row, rowIdx) => row.forEach((tile, colIdx) => {
-      tile.setPos(colIdx * I_TILE_SIZE, rowIdx * I_TILE_SIZE, -I_TILE_SIZE);
-      this.container.addChild(tile.getSprite());
-    }));
-    // Scene size is depend on tile size
-    this.width = this.container.width;
-    this.height = this.container.height;
     // add object
     this.objectList.forEach((obj) => {
       this.container.addChild(obj.getSprite());
@@ -240,10 +201,6 @@ export default class Scene extends EventTarget {
     const width = target.getWidth();
     const height = target.getHeight();
     const nextX = curX + dist;
-    // map out check
-    if (nextX < 0 || nextX + width > this.width) {
-      return curX;
-    }
     const blockingObj = this.blockingObjectList.find((obj) => {
       if (obj === target) {
         return false;
@@ -267,10 +224,6 @@ export default class Scene extends EventTarget {
     const height = target.getHeight();
     const nextY = curY + dist;
 
-    // map out check
-    if (nextY < 0 || nextY + height > this.height) {
-      return curY;
-    }
     const blockingObj = this.blockingObjectList
       .find((obj) => {
         if (obj === target) {
