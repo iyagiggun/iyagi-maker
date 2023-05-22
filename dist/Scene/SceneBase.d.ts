@@ -5,7 +5,10 @@ declare class SceneBase extends EventTarget {
     protected container: Container;
     protected app?: Application;
     constructor(name: string);
+    protected getApplication(): Application<import("pixi.js").ICanvas>;
+    setApplication(app: Application): void;
     addEventListener(type: EventType, callback: () => void): void;
     dispatchEvent(event: CustomEvent): boolean;
+    wait(seconds: number): Promise<void>;
 }
 export default SceneBase;
