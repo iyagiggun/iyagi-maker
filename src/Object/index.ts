@@ -8,6 +8,8 @@ import { COORDS_H_IDX, COORDS_W_IDX, Coords } from '../Utils/Coordinate';
 type SpriteInfo = {
   coordsList: Coords[];
   collisionCoords?: Coords;
+  loop?: boolean;
+  animationSpeed?: number;
 };
 
 export type IDirection = 'up' | 'down' | 'left' | 'right';
@@ -48,12 +50,15 @@ const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined)
   }), {});
 };
 
-const getSprite = (frameKeyList: string[]) => {
+const getSprite = (frameKeyList: string[], animationSpeed = 1, loop = true) => {
   if (frameKeyList.length === 1) {
     return Sprite.from(frameKeyList[0]);
   }
   if (frameKeyList.length > 1) {
-    return new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
+    const aSprite = new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
+    aSprite.loop = loop;
+    aSprite.animationSpeed = animationSpeed;
+    return aSprite;
   }
   return undefined;
 };
@@ -129,10 +134,26 @@ export default class IObject {
       },
     }).parse();
 
-    this.upS = getSprite(Object.keys(dirFrames.up));
-    this.downS = getSprite(Object.keys(dirFrames.down));
-    this.leftS = getSprite(Object.keys(dirFrames.left));
-    this.rightS = getSprite(Object.keys(dirFrames.right));
+    this.upS = getSprite(
+      Object.keys(dirFrames.up),
+      this.objInfo.up?.animationSpeed,
+      this.objInfo.up?.loop,
+    );
+    this.downS = getSprite(
+      Object.keys(dirFrames.down),
+      this.objInfo.up?.animationSpeed,
+      this.objInfo.up?.loop,
+    );
+    this.leftS = getSprite(
+      Object.keys(dirFrames.left),
+      this.objInfo.up?.animationSpeed,
+      this.objInfo.up?.loop,
+    );
+    this.rightS = getSprite(
+      Object.keys(dirFrames.right),
+      this.objInfo.up?.animationSpeed,
+      this.objInfo.up?.loop,
+    );
 
     this.setDirection(this.objInfo.dir || 'down');
     this.getSprite().visible = this.objInfo.visible ?? true;
