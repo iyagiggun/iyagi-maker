@@ -1,19 +1,11 @@
 import {
-  AnimatedSprite, Assets,
+  Assets,
   Container,
   Sprite,
   Texture,
 } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
-import { Coords } from '../Utils/Coordinate';
 import ISprite from './ISprite';
-
-type SpriteInfo = {
-  coordsList: Coords[];
-  collisionCoords?: Coords;
-  loop?: boolean;
-  animationSpeed?: number;
-};
 
 export type IDirection = 'up' | 'down' | 'left' | 'right';
 
@@ -22,12 +14,6 @@ export type IObjectInfo = {
     default: string;
     [key: string]: string;
   }
-
-  spriteUrl: string;
-  up?: SpriteInfo;
-  down: SpriteInfo;
-  left?: SpriteInfo;
-  right?: SpriteInfo;
 
   pos?: [x: number, y: number, z?: number];
   dir?: IDirection;

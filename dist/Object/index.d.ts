@@ -1,23 +1,11 @@
 import { Container, Sprite } from 'pixi.js';
-import { Coords } from '../Utils/Coordinate';
 import ISprite from './ISprite';
-declare type SpriteInfo = {
-    coordsList: Coords[];
-    collisionCoords?: Coords;
-    loop?: boolean;
-    animationSpeed?: number;
-};
 export declare type IDirection = 'up' | 'down' | 'left' | 'right';
 export declare type IObjectInfo = {
     photoInfo?: {
         default: string;
         [key: string]: string;
     };
-    spriteUrl: string;
-    up?: SpriteInfo;
-    down: SpriteInfo;
-    left?: SpriteInfo;
-    right?: SpriteInfo;
     pos?: [x: number, y: number, z?: number];
     dir?: IDirection;
     visible?: boolean;
@@ -43,7 +31,7 @@ export default class IObject {
     getPhoto(): Sprite;
     changePhoto(key: string): void;
     getISprite(): ISprite;
-    getCollisionMod(): Coords;
+    getCollisionMod(): number[];
     setReaction(reaction: () => Promise<void>): void;
     getReaction(): (() => Promise<void>) | undefined;
     react(): Promise<void>;
@@ -71,4 +59,3 @@ export default class IObject {
     attach(container: Container): void;
     detach(container: Container): void;
 }
-export {};
