@@ -1,8 +1,11 @@
-import { Sprite } from 'pixi.js';
+import { Container, Sprite } from 'pixi.js';
 import { Coords } from '../Utils/Coordinate';
+import ISprite from './ISprite';
 declare type SpriteInfo = {
     coordsList: Coords[];
     collisionCoords?: Coords;
+    loop?: boolean;
+    animationSpeed?: number;
 };
 export declare type IDirection = 'up' | 'down' | 'left' | 'right';
 export declare type IObjectInfo = {
@@ -19,34 +22,32 @@ export declare type IObjectInfo = {
     dir?: IDirection;
     visible?: boolean;
     passable?: boolean;
+    sprites: {
+        default: ISprite;
+        [key: string]: ISprite;
+    };
 };
 export default class IObject {
     private name;
-    private objInfo;
+    private info;
     private photo;
     private photoTextureMap?;
-    private sprite;
-    private upS;
-    private downS;
-    private leftS;
-    private rightS;
+    private loaded;
+    private isprite;
     private passable;
-    private collisionMod?;
     private reaction?;
-    constructor(name: string, objInfo: IObjectInfo);
-    private getDirFrames;
+    constructor(name: string, info: IObjectInfo);
     isLoaded(): boolean;
     load(): Promise<void>;
     getName(): string;
     getPhoto(): Sprite;
     changePhoto(key: string): void;
-    getSprite(): Sprite;
+    getISprite(): ISprite;
     getCollisionMod(): Coords;
     setReaction(reaction: () => Promise<void>): void;
     getReaction(): (() => Promise<void>) | undefined;
     react(): Promise<void>;
     isPassable(): boolean;
-    private getTexture;
     getPos(): [number, number];
     setPos(x: number, y: number, zMod?: number): this;
     getWidth(): number;
@@ -56,17 +57,18 @@ export default class IObject {
     getDirection(): IDirection;
     changeDirection(deltaX: number, deltaY: number): this;
     setDirection(direction: IDirection): this;
-    play(_speed: number): void;
+    play(_speed: number): this;
     isPlaying(): boolean;
-    stop(): void;
-    hide(): void;
-    show(): void;
-    wait(time?: number): Promise<void>;
+    stop(): this;
+    hide(): this;
+    show(): this;
     getCenterPos(): [number, number];
     getCoordinateRelationship(target: IObject): {
         distance: number;
         xDiff: number;
         yDiff: number;
     };
+    attach(container: Container): void;
+    detach(container: Container): void;
 }
 export {};

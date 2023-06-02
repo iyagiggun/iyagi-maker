@@ -25,7 +25,7 @@ class SceneObjectManager extends SceneBase_1.default {
         if (!obj.isPassable()) {
             this.blockingObjectList.push(obj);
         }
-        this.container.addChild(obj.getSprite());
+        obj.attach(this.container);
     }
     removeObject(obj) {
         if (!this.objectList.includes(obj)) {
@@ -33,7 +33,7 @@ class SceneObjectManager extends SceneBase_1.default {
         }
         this.objectList = this.objectList.filter((_obj) => _obj !== obj);
         this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-        this.container.removeChild(obj.getSprite());
+        obj.detach(this.container);
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();

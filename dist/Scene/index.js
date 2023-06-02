@@ -12,7 +12,7 @@ class Scene extends SceneController_1.default {
     drawMap() {
         // add object
         this.objectList.forEach((obj) => {
-            this.container.addChild(obj.getSprite());
+            obj.attach(this.container);
         });
     }
     moveCharacter(target, [destX, destY], speed, chaseCamera) {

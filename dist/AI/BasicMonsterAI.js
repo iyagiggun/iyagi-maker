@@ -28,7 +28,7 @@ exports.default = {
             isActing = true;
             const { distance } = monster.getCoordinateRelationship(target);
             if (distance < 10) {
-                monster.attack();
+                monster.attack(target);
                 isActing = false;
                 return;
             }

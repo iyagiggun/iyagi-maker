@@ -9,7 +9,7 @@ export default class Scene extends SceneController {
   public drawMap() {
     // add object
     this.objectList.forEach((obj) => {
-      this.container.addChild(obj.getSprite());
+      obj.attach(this.container);
     });
   }
 

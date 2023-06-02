@@ -1,9 +1,12 @@
 import {
-  AnimatedSprite, Assets, BaseTexture,
-  Sprite, Spritesheet, Texture,
+  AnimatedSprite, Assets,
+  Container,
+  Sprite,
+  Texture,
 } from 'pixi.js';
-import { FRAMES_PER_SECOND, TRANSPARENT_1PX_IMG } from '../Constant';
-import { COORDS_H_IDX, COORDS_W_IDX, Coords } from '../Utils/Coordinate';
+import { TRANSPARENT_1PX_IMG } from '../Constant';
+import { Coords } from '../Utils/Coordinate';
+import ISprite from './ISprite';
 
 type SpriteInfo = {
   coordsList: Coords[];
@@ -31,37 +34,14 @@ export type IObjectInfo = {
 
   visible?: boolean;
   passable?: boolean;
+
+  sprites: {
+    default: ISprite;
+    [key: string]: ISprite;
+  }
 };
 
-const textureMap: { [key: string] : BaseTexture } = {};
 const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };
-
-const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined) => {
-  if (!coordsList) {
-    return {};
-  }
-  return coordsList.reduce((frames, [x, y, w, h], idx) => ({
-    ...frames,
-    [`${prefix}-${idx}`]: {
-      frame: {
-        x, y, w, h,
-      },
-    },
-  }), {});
-};
-
-const getSprite = (frameKeyList: string[], animationSpeed = 1, loop = true) => {
-  if (frameKeyList.length === 1) {
-    return Sprite.from(frameKeyList[0]);
-  }
-  if (frameKeyList.length > 1) {
-    const aSprite = new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
-    aSprite.loop = loop;
-    aSprite.animationSpeed = animationSpeed;
-    return aSprite;
-  }
-  return undefined;
-};
 
 const getDirection = (deltaX: number, deltaY: number) => {
   if (Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -75,98 +55,41 @@ export default class IObject {
 
   private photoTextureMap?: { [key: string]: Texture };
 
-  // 현재 sprite. load 후 값이 세팅 됨 - loaded 판단할 때 사용
-  private sprite: Sprite | undefined;
+  private loaded = false;
 
-  private upS: Sprite | undefined;
-
-  private downS: Sprite | undefined;
-
-  private leftS: Sprite | undefined;
-
-  private rightS: Sprite | undefined;
+  private isprite: ISprite | undefined;
 
   private passable: boolean;
 
-  private collisionMod?: Coords;
-
   private reaction?: () => Promise<void>;
 
-  constructor(private name: string, private objInfo: IObjectInfo) {
-    this.passable = objInfo.passable ?? false;
+  constructor(private name: string, private info: IObjectInfo) {
+    this.passable = info.passable ?? false;
     this.photo = new Sprite();
   }
 
-  private getDirFrames() {
-    return {
-      up: coordsListToFrame(`${this.name}-up`)(this.objInfo.up?.coordsList),
-      down: coordsListToFrame(`${this.name}-down`)(this.objInfo.down.coordsList),
-      left: coordsListToFrame(`${this.name}-left`)(this.objInfo.left?.coordsList),
-      right: coordsListToFrame(`${this.name}-right`)(this.objInfo.right?.coordsList),
-    };
-  }
-
   public isLoaded() {
-    return !!this.sprite;
+    return this.loaded;
   }
 
   public async load() {
-    // case: loaded
-    if (this.isLoaded()) {
+    if (this.loaded) {
       return;
     }
-    // case: still not loaded
+    await Promise.all(Object.values(this.info.sprites).map((sprite) => sprite.load()));
+    this.isprite = this.info.sprites.default;
 
-    // Load Texture
-    const dirFrames = this.getDirFrames();
-    await new Spritesheet(this.getTexture(), {
-      frames: Object.values(dirFrames).reduce((acc, _frames) => {
-        if (!_frames) {
-          return acc;
-        }
-        return {
-          ...acc,
-          ..._frames,
-        };
-      }, {}),
-      meta: {
-        scale: '1',
-      },
-    }).parse();
-
-    this.upS = getSprite(
-      Object.keys(dirFrames.up),
-      this.objInfo.up?.animationSpeed,
-      this.objInfo.up?.loop,
-    );
-    this.downS = getSprite(
-      Object.keys(dirFrames.down),
-      this.objInfo.up?.animationSpeed,
-      this.objInfo.up?.loop,
-    );
-    this.leftS = getSprite(
-      Object.keys(dirFrames.left),
-      this.objInfo.up?.animationSpeed,
-      this.objInfo.up?.loop,
-    );
-    this.rightS = getSprite(
-      Object.keys(dirFrames.right),
-      this.objInfo.up?.animationSpeed,
-      this.objInfo.up?.loop,
-    );
-
-    this.setDirection(this.objInfo.dir || 'down');
-    this.getSprite().visible = this.objInfo.visible ?? true;
-
-    const [posX, posY, zMod] = this.objInfo.pos || [0, 0];
+    const [posX, posY, zMod] = this.info.pos || [0, 0];
     this.setPos(posX, posY, zMod);
 
     // Load Photo
-    const photoInfo: { [key: string]: string } = this.objInfo.photoInfo || DEFAULT_PHOTO_INFO;
+    const photoInfo: { [key: string]: string } = this.info.photoInfo || DEFAULT_PHOTO_INFO;
     const photoKeys = Object.keys(photoInfo);
     photoKeys.forEach((key) => Assets.add(`${this.name}:${key}`, photoInfo[key]));
     this.photoTextureMap = await Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
     this.photo.texture = this.photoTextureMap[`${this.name}:default`];
+
+    this.loaded = true;
   }
 
   public getName() {
@@ -185,19 +108,15 @@ export default class IObject {
     this.photo.texture = this.photoTextureMap[key];
   }
 
-  public getSprite() {
-    if (!this.sprite) {
-      throw new Error(`asset '${this.name}' is not loaded`);
+  public getISprite() {
+    if (!this.isprite) {
+      throw new Error(`Fail to get "${this.name}" sprite.`);
     }
-    return this.sprite;
+    return this.isprite;
   }
 
   public getCollisionMod() {
-    if (!this.collisionMod) {
-      const sprite = this.getSprite();
-      return [0, 0, sprite.width, sprite.height];
-    }
-    return this.collisionMod;
+    return this.getISprite().getCollisionMod();
   }
 
   public setReaction(reaction: () => Promise<void>) {
@@ -216,62 +135,33 @@ export default class IObject {
     return this.passable;
   }
 
-  private getTexture() {
-    const { spriteUrl } = this.objInfo;
-    if (!textureMap[spriteUrl]) {
-      textureMap[spriteUrl] = BaseTexture.from(spriteUrl);
-    }
-    return textureMap[spriteUrl];
-  }
-
   public getPos(): [number, number] {
-    const [modX, modY] = this.getCollisionMod();
-    const { x: spriteX, y: spriteY } = this.getSprite();
-    return [spriteX + modX, spriteY + modY];
+    return this.getISprite().getPos();
   }
 
   public setPos(x: number, y: number, zMod = 0) {
-    const [modX, modY] = this.getCollisionMod();
-    const sprite = this.getSprite();
-    sprite.x = x - modX;
-    sprite.y = y - modY;
-    sprite.zIndex = sprite.y + sprite.height + zMod;
+    this.getISprite().setPos(x, y, zMod);
     return this;
   }
 
   public getWidth() {
-    return this.getCollisionMod()[COORDS_W_IDX];
+    return this.getISprite().getWidth();
   }
 
   public getHeight() {
-    return this.getCollisionMod()[COORDS_H_IDX];
+    return this.getISprite().getHeight();
   }
 
   public getGlobalPos() {
-    const [modX, modY] = this.getCollisionCoords();
-    const { x: globalX, y: globalY } = this.getSprite().getGlobalPosition();
-    return [globalX + modX, globalY + modY];
+    return this.getISprite().getGlobalPos();
   }
 
   public getCollisionCoords() {
-    const [x, y] = this.getPos();
-    const [, , colsW, colsH] = this.getCollisionMod();
-    return [x, y, colsW, colsH];
+    return this.getISprite().getCollisionCoords();
   }
 
   public getDirection(): IDirection {
-    switch (this.sprite) {
-      case this.upS:
-        return 'up';
-      case this.downS:
-        return 'down';
-      case this.leftS:
-        return 'left';
-      case this.rightS:
-        return 'right';
-      default:
-        throw new Error(`[IObjet: ${this.name}] Invalid direction. ${this.name} / ${!!this.sprite}`);
-    }
+    return this.getISprite().getDirection();
   }
 
   public changeDirection(deltaX: number, deltaY: number) {
@@ -279,95 +169,32 @@ export default class IObject {
   }
 
   public setDirection(direction: IDirection) {
-    const lastSprite = this.sprite;
-    const [lastX, lastY] = lastSprite ? this.getPos() : [0, 0];
-    switch (direction) {
-      case 'up':
-        this.sprite = this.upS;
-        this.collisionMod = this.objInfo.up?.collisionCoords;
-        break;
-      case 'down':
-        this.sprite = this.downS;
-        this.collisionMod = this.objInfo.down.collisionCoords;
-        break;
-      case 'left':
-        this.sprite = this.leftS;
-        this.collisionMod = this.objInfo.left?.collisionCoords;
-        break;
-      case 'right':
-        this.sprite = this.rightS;
-        this.collisionMod = this.objInfo.right?.collisionCoords;
-        break;
-      default:
-        throw new Error(`Fail to change ${this.name} dir. Invalid direction. ${direction}`);
-    }
-    if (!this.sprite) {
-      throw new Error(`Fail to change ${this.name} dir. no sprite. ${direction}`);
-    }
-    if (!lastSprite) {
-      return this;
-    }
-    this.setPos(lastX, lastY);
-    const { parent } = lastSprite;
-    if (parent) {
-      if (lastSprite instanceof AnimatedSprite) {
-        lastSprite.stop();
-      }
-      parent.removeChild(lastSprite);
-      parent.addChild(this.sprite);
-    }
+    this.getISprite().setDirection(direction);
     return this;
   }
 
   public play(_speed: number) {
-    const sprite = this.getSprite();
-    if (!(sprite instanceof AnimatedSprite)) {
-      return;
-    }
-    if (!sprite.playing) {
-      sprite.play();
-    }
-    const speed = (_speed * 6) / FRAMES_PER_SECOND;
-    if (sprite.animationSpeed === speed) {
-      return;
-    }
-    sprite.animationSpeed = speed;
+    this.getISprite().play(_speed);
+    return this;
   }
 
   public isPlaying() {
-    if (!(this.sprite instanceof AnimatedSprite)) {
-      return false;
-    }
-    return this.sprite.playing;
+    return this.getISprite().isPlaying();
   }
 
   public stop() {
-    const sprite = this.getSprite();
-    if (!(sprite instanceof AnimatedSprite)) {
-      return;
-    }
-    sprite.stop();
+    this.getISprite().stop();
+    return this;
   }
 
   public hide() {
-    this.getSprite().visible = false;
+    this.getISprite().hide();
+    return this;
   }
 
   public show() {
-    this.getSprite().visible = true;
-  }
-
-  public wait(time = 0) {
-    const sprite = this.getSprite();
-    const playing = sprite instanceof AnimatedSprite ? sprite.playing : false;
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        if (playing && sprite instanceof AnimatedSprite) {
-          sprite.play();
-        }
-        resolve();
-      }, time);
-    });
+    this.getISprite().show();
+    return this;
   }
 
   public getCenterPos(): [number, number] {
@@ -417,5 +244,19 @@ export default class IObject {
     return {
       distance, xDiff, yDiff,
     };
+  }
+
+  public attach(container: Container) {
+    if (!this.isprite) {
+      throw new Error(`Fail to attach "${this.name}". no sprite.`);
+    }
+    this.isprite.attach(container);
+  }
+
+  public detach(container: Container) {
+    if (!this.isprite) {
+      throw new Error(`Fail to detach "${this.name}". no sprite.`);
+    }
+    this.isprite.detach(container);
   }
 }
