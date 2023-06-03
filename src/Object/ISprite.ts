@@ -262,4 +262,8 @@ export default class ISprite {
     }
     return this.sprite.playing;
   }
+
+  public getParent() {
+    return this.getSprite().parent;
+  }
 }

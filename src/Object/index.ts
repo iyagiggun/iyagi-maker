@@ -245,4 +245,19 @@ export default class IObject {
     }
     this.isprite.detach(container);
   }
+
+  public do(spriteName: string) {
+    const spriteDo = this.info.sprites[spriteName];
+    if (!spriteDo) {
+      throw new Error(`Fail to do "${spriteName}"`);
+    }
+    const last = this.getISprite();
+    last.stop();
+    last.hide();
+    const [x, y] = last.getPos();
+    spriteDo.attach(last.getParent());
+    spriteDo.setDirection(last.getDirection());
+    spriteDo.setPos(x, y);
+    spriteDo.play(1);
+  }
 }
