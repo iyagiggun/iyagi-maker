@@ -159,8 +159,8 @@ export default class IObject {
     return this;
   }
 
-  public play(_speed: number) {
-    this.getISprite().play(_speed);
+  public play(acc = 1) {
+    this.getISprite().play(acc);
     return this;
   }
 
@@ -258,6 +258,6 @@ export default class IObject {
     spriteDo.attach(last.getParent());
     spriteDo.setDirection(last.getDirection());
     spriteDo.setPos(x, y);
-    spriteDo.play(1);
+    spriteDo.play();
   }
 }

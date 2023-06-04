@@ -22,6 +22,8 @@ type ISpriteInfo = {
 
 export type IDirection = 'up' | 'down' | 'left' | 'right';
 
+const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
+
 const TEXTURE_MAP: { [key: string] : BaseTexture } = {};
 
 const getTexture = (spriteUrl: string) => {
@@ -46,14 +48,16 @@ const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined)
   }), {});
 };
 
-const getSprite = (frameKeyList: string[], animationSpeed = 1, loop = true) => {
+const getSprite = (
+  frameKeyList: string[],
+  loop = true,
+) => {
   if (frameKeyList.length === 1) {
     return Sprite.from(frameKeyList[0]);
   }
   if (frameKeyList.length > 1) {
     const aSprite = new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
     aSprite.loop = loop;
-    aSprite.animationSpeed = animationSpeed;
     return aSprite;
   }
   return undefined;
@@ -107,25 +111,21 @@ export default class ISprite {
 
     this.directionalSpriteMap.up = getSprite(
       Object.keys(frames.up),
-      this.info.up?.animationSpeed,
       this.info.up?.loop,
     );
 
     this.directionalSpriteMap.down = getSprite(
       Object.keys(frames.down),
-      this.info.down?.animationSpeed,
       this.info.down?.loop,
     );
 
     this.directionalSpriteMap.left = getSprite(
       Object.keys(frames.left),
-      this.info.left?.animationSpeed,
       this.info.left?.loop,
     );
 
     this.directionalSpriteMap.right = getSprite(
       Object.keys(frames.right),
-      this.info.right?.animationSpeed,
       this.info.right?.loop,
     );
 
@@ -237,15 +237,17 @@ export default class ISprite {
     return this;
   }
 
-  public play(speed: number) {
+  public play(acc = 1) {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
       return;
     }
+    const dir = this.getDirection();
+    const base = this.info[dir]?.animationSpeed || DEFAULT_ANIMATION_SPEED;
+    sprite.animationSpeed = acc * base;
     if (!sprite.playing) {
       sprite.play();
     }
-    sprite.animationSpeed = (speed * 6) / FRAMES_PER_SECOND;
   }
 
   public stop() {
