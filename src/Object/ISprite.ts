@@ -20,6 +20,8 @@ type ISpriteInfo = {
   dir?: IDirection;
 };
 
+type ISpriteEventType = 'onFrameChange' | 'onComplete' | 'onLoop';
+
 export type IDirection = 'up' | 'down' | 'left' | 'right';
 
 const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
@@ -63,7 +65,7 @@ const getSprite = (
   return undefined;
 };
 
-export default class ISprite {
+export default class ISprite extends EventTarget {
   private sprite? : Sprite;
 
   private loaded = false;
@@ -80,7 +82,7 @@ export default class ISprite {
   private collisionMod?: Coords;
 
   constructor(private name: string, private info: ISpriteInfo) {
-
+    super();
   }
 
   public async load() {
@@ -137,6 +139,15 @@ export default class ISprite {
       throw new Error(`Fail to get "${this.name}" sprite. no data.`);
     }
     return this.sprite;
+  }
+
+  public addEventListener(type: ISpriteEventType, callback: () => void) {
+    super.addEventListener(type, callback);
+  }
+
+  public dispatchEvent(event: CustomEvent<ISpriteEventType>) {
+    super.dispatchEvent(event);
+    return true;
   }
 
   public show() {
@@ -246,6 +257,15 @@ export default class ISprite {
     const base = this.info[dir]?.animationSpeed || DEFAULT_ANIMATION_SPEED;
     sprite.animationSpeed = acc * base;
     if (!sprite.playing) {
+      sprite.onFrameChange = () => {
+        this.dispatchEvent(new CustomEvent('onFrameChange'));
+      };
+      sprite.onComplete = () => {
+        this.dispatchEvent(new CustomEvent('onComplete'));
+      };
+      sprite.onLoop = () => {
+        this.dispatchEvent(new CustomEvent('onLoop'));
+      };
       sprite.play();
     }
   }
@@ -265,7 +285,32 @@ export default class ISprite {
     return this.sprite.playing;
   }
 
-  public getParent() {
-    return this.getSprite().parent;
+  public replace(next: ISprite) {
+    const { parent } = this.getSprite();
+    if (!parent) {
+      throw new Error(`Fail to replace ${this.name}. no parent.`);
+    }
+    this.stop();
+    const [x, y] = this.getPos();
+    this.detach(parent);
+    next.attach(parent);
+    next.setDirection(this.getDirection());
+    next.setPos(x, y);
+  }
+
+  public getCurrentFrame() {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      throw new Error(`Fail to get current fame. "${this.name}" is not AnimatiedSprite.`);
+    }
+    return sprite.currentFrame;
+  }
+
+  public isLoopAnimation() {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      throw new Error(`Fail to get isLoopAnimation. "${this.name}" is not AnimatiedSprite.`);
+    }
+    return sprite.loop;
   }
 }

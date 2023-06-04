@@ -251,13 +251,16 @@ export default class IObject {
     if (!spriteDo) {
       throw new Error(`Fail to do "${spriteName}"`);
     }
+
     const last = this.getISprite();
-    last.stop();
-    last.hide();
-    const [x, y] = last.getPos();
-    spriteDo.attach(last.getParent());
-    spriteDo.setDirection(last.getDirection());
-    spriteDo.setPos(x, y);
+    last.replace(spriteDo);
+
+    if (!spriteDo.isLoopAnimation()) {
+      spriteDo.addEventListener('onComplete', () => {
+        spriteDo.replace(last);
+      });
+    }
+
     spriteDo.play();
   }
 }
