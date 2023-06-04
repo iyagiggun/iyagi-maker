@@ -254,6 +254,7 @@ export default class IObject {
 
     const last = this.getISprite();
     last.replace(spriteDo);
+    this.isprite = spriteDo;
 
     if (!spriteDo.isLoopAnimation()) {
       spriteDo.addEventListener('onComplete', () => {

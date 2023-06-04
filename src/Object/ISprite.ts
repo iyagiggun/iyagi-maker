@@ -309,7 +309,7 @@ export default class ISprite extends EventTarget {
   public isLoopAnimation() {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
-      throw new Error(`Fail to get isLoopAnimation. "${this.name}" is not AnimatiedSprite.`);
+      return false;
     }
     return sprite.loop;
   }
