@@ -70,5 +70,8 @@ class SceneObjectManager extends SceneBase_1.default {
         }
         return nextY;
     }
+    getIntersectingObjectList(coords) {
+        return this.objectList.filter((obj) => (0, Coordinate_1.isIntersecting)(coords, obj.getCollisionCoords()));
+    }
 }
 exports.default = SceneObjectManager;
