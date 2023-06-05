@@ -1,5 +1,5 @@
 import IObject from '../Object';
-import { isIntersecting } from '../Utils/Coordinate';
+import { Coords, isIntersecting } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 
 export type EventType = 'start';
@@ -83,6 +83,10 @@ class SceneObjectManager extends SceneBase {
       return curY < blockingObjY ? blockingObjY - height : blockingObjY + blockingObj.getHeight();
     }
     return nextY;
+  }
+
+  public getIntersectingObjectList(coords: Coords) {
+    return this.objectList.filter((obj) => isIntersecting(coords, obj.getCollisionCoords()));
   }
 }
 
