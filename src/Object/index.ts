@@ -36,7 +36,7 @@ const getDirection = (deltaX: number, deltaY: number) => {
   return deltaY > 0 ? 'down' : 'up';
 };
 
-export default class IObject {
+export default class IObject extends EventTarget {
   private photo;
 
   private photoTextureMap?: { [key: string]: Texture };
@@ -50,6 +50,7 @@ export default class IObject {
   private reaction?: () => Promise<void>;
 
   constructor(private name: string, private info: IObjectInfo) {
+    super();
     this.passable = info.passable ?? false;
     this.photo = new Sprite();
   }
@@ -257,9 +258,14 @@ export default class IObject {
     this.isprite = spriteDo;
 
     if (!spriteDo.isLoopAnimation()) {
-      spriteDo.addEventListener('onComplete', () => {
-        spriteDo.replace(last);
-      });
+      // AnimatedSprite 가 아니면 발생하지 않음
+      spriteDo.addEventListener(
+        'onComplete',
+        () => {
+          spriteDo.replace(last);
+        },
+        { once: true },
+      );
     }
 
     spriteDo.play();

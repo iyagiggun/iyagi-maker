@@ -141,8 +141,8 @@ export default class ISprite extends EventTarget {
     return this.sprite;
   }
 
-  public addEventListener(type: ISpriteEventType, callback: () => void) {
-    super.addEventListener(type, callback);
+  public addEventListener(type: ISpriteEventType, callback: () => void, options?: { once: boolean }) {
+    super.addEventListener(type, callback, options);
   }
 
   public dispatchEvent(event: CustomEvent<ISpriteEventType>) {
