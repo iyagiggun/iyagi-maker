@@ -49,6 +49,8 @@ export default class IObject extends EventTarget {
 
   private reaction?: () => Promise<void>;
 
+  private doing = false;
+
   constructor(private name: string, private info: IObjectInfo) {
     super();
     this.passable = info.passable ?? false;
@@ -248,6 +250,11 @@ export default class IObject extends EventTarget {
   }
 
   public do(spriteName: string) {
+    if (this.doing) {
+      return;
+    }
+    console.error('do', spriteName);
+    this.doing = true;
     const spriteDo = this.info.sprites[spriteName];
     if (!spriteDo) {
       throw new Error(`Fail to do "${spriteName}"`);
@@ -263,11 +270,16 @@ export default class IObject extends EventTarget {
         'onComplete',
         () => {
           spriteDo.replace(last);
+          this.isprite = last;
+          this.doing = false;
         },
         { once: true },
       );
     }
+    spriteDo.play(undefined, 0);
+  }
 
-    spriteDo.play();
+  public isDoing() {
+    return this.doing;
   }
 }

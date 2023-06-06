@@ -248,9 +248,12 @@ export default class ISprite extends EventTarget {
     return this;
   }
 
-  public play(acc = 1) {
+  public play(acc = 1, playPosition?: number) {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
+      return;
+    }
+    if (sprite.playing) {
       return;
     }
     const dir = this.getDirection();
@@ -266,7 +269,11 @@ export default class ISprite extends EventTarget {
       sprite.onLoop = () => {
         this.dispatchEvent(new CustomEvent('onLoop'));
       };
-      sprite.play();
+      if (playPosition === undefined) {
+        sprite.play();
+      } else {
+        sprite.gotoAndPlay(playPosition);
+      }
     }
   }
 

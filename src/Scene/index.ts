@@ -3,7 +3,7 @@ import SceneController from './SceneController';
 
 type Status = 'idle' | 'talking' | '';
 
-export default class Scene extends SceneController {
+export default class IScene extends SceneController {
   private status: Status = 'idle';
 
   public drawMap() {
@@ -20,6 +20,10 @@ export default class Scene extends SceneController {
     chaseCamera: boolean,
   ) {
     return new Promise<void>((resolve) => {
+      if (target.isDoing()) {
+        resolve();
+        return;
+      }
       const { ticker } = this.getApplication();
 
       const tick = () => {
