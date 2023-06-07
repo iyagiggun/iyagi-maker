@@ -1,5 +1,4 @@
 import IObject from '../Object';
-import ICharacter from '../Object/Character';
 import IScene from '../Scene';
 import { getDistance } from '../Utils/Coordinate';
 
@@ -26,8 +25,8 @@ const findShortestPos = (attacker: IObject, target: IObject) => {
 
 const IBasicTracking = (
   scene: IScene,
-  tracker: ICharacter,
-  target: ICharacter,
+  tracker: IObject,
+  target: IObject,
   onArrived?: () => void,
   interval = 250,
 ) => {

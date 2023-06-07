@@ -65,6 +65,13 @@ const getSprite = (
   return undefined;
 };
 
+export const getDirection = (deltaX: number, deltaY: number) => {
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    return deltaX > 0 ? 'right' : 'left';
+  }
+  return deltaY > 0 ? 'down' : 'up';
+};
+
 export default class ISprite extends EventTarget {
   private sprite? : Sprite;
 
@@ -319,5 +326,9 @@ export default class ISprite extends EventTarget {
       return false;
     }
     return sprite.loop;
+  }
+
+  public isAnimation() {
+    return this.getSprite() instanceof AnimatedSprite;
   }
 }
