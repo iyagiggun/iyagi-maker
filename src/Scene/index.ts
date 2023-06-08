@@ -9,7 +9,7 @@ export default class IScene extends SceneController {
   public drawMap() {
     // add object
     this.objectList.forEach((obj) => {
-      obj.attach(this.container);
+      obj.attachAt(this.container);
     });
   }
 

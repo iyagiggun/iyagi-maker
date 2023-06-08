@@ -39,7 +39,6 @@ const coordsListToFrame = (prefix: string) => (coordsList: Coords[] | undefined)
   if (!coordsList) {
     return {};
   }
-
   return coordsList.reduce((frames, [x, y, w, h], idx) => ({
     ...frames,
     [`${prefix}-${idx}`]: {
@@ -76,6 +75,8 @@ export default class ISprite extends EventTarget {
   private sprite? : Sprite;
 
   private loaded = false;
+
+  private container: Container | null = null;
 
   private directionalSpriteMap: {
     [key in IDirection]: Sprite | undefined;
@@ -210,12 +211,17 @@ export default class ISprite extends EventTarget {
     return [globalX + modX, globalY + modY];
   }
 
-  public attach(container: Container) {
-    container.addChild(this.getSprite());
+  public attachAt(container: Container) {
+    this.container = container;
+    this.container.addChild(this.getSprite());
   }
 
-  public detach(container: Container) {
-    container.removeChild(this.getSprite());
+  public detach() {
+    if (!this.container) {
+      throw new Error(`Fail to detach "${this.name}" no the container.`);
+    }
+    this.container.removeChild(this.getSprite());
+    this.container = null;
   }
 
   public getDirection() {
@@ -234,23 +240,27 @@ export default class ISprite extends EventTarget {
       throw new Error(`Fail to change "${this.name}" direction(${direction}). no data.`);
     }
 
-    const last = this.sprite;
-    const [lastX, lastY] = last ? this.getPos() : [0, 0];
+    const lastSprite = this.sprite;
+    const [lastX, lastY] = lastSprite ? this.getPos() : [0, 0];
 
     this.sprite = next;
     this.collisionMod = this.info[direction]?.collisionCoords;
-    if (!last) {
+
+    if (!lastSprite) {
       return this;
     }
-    if (last instanceof AnimatedSprite) {
-      last.stop();
+
+    if (lastSprite instanceof AnimatedSprite) {
+      lastSprite.stop();
     }
+
+    if (!this.container) {
+      return this;
+    }
+
+    this.container.removeChild(lastSprite);
     this.setPos(lastX, lastY);
-    const { parent } = last;
-    if (parent) {
-      parent.removeChild(last);
-      parent.addChild(this.sprite);
-    }
+    this.container.addChild(this.sprite);
 
     return this;
   }
@@ -300,16 +310,16 @@ export default class ISprite extends EventTarget {
   }
 
   public replace(next: ISprite) {
-    const { parent } = this.getSprite();
-    if (!parent) {
-      throw new Error(`Fail to replace ${this.name}. no parent.`);
+    const { container } = this;
+    if (!container) {
+      throw new Error(`Fail to replace "${this.name}". no the container.`);
     }
-    this.stop();
     const [x, y] = this.getPos();
-    this.detach(parent);
-    next.attach(parent);
     next.setDirection(this.getDirection());
     next.setPos(x, y);
+    this.stop();
+    this.detach();
+    next.attachAt(container);
   }
 
   public getCurrentFrame() {

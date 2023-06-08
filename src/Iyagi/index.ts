@@ -4,6 +4,8 @@ import IScene from '../Scene';
 class Iyagi {
   private app: Application;
 
+  private currentScene?: IScene;
+
   private width: number;
 
   private height: number;
@@ -19,13 +21,14 @@ class Iyagi {
     });
   }
 
-  play(scene: IScene) {
-    this.app.stage.removeChildren();
-    scene.load().then(() => {
-      scene.setApplication(this.app);
-      scene.drawMap();
-      scene.dispatchEvent(new CustomEvent('start'));
-    });
+  async play(scene: IScene) {
+    await scene.load();
+    if (this.currentScene) {
+      this.currentScene.detach();
+    }
+    scene.attachAt(this.app);
+    scene.drawMap();
+    scene.dispatchEvent(new CustomEvent('start'));
   }
 }
 

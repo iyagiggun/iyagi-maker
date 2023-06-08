@@ -5,7 +5,7 @@ export type EventType = 'start';
 class SceneBase extends EventTarget {
   protected container: Container;
 
-  protected app?: Application;
+  protected app: Application | null = null;
 
   constructor(protected name: string) {
     super();
@@ -20,9 +20,14 @@ class SceneBase extends EventTarget {
     return this.app;
   }
 
-  public setApplication(app: Application) {
+  public detach() {
+    this.getApplication().stage.removeChild(this.container);
+    this.app = null;
+  }
+
+  public attachAt(app: Application) {
+    app.stage.addChild(this.container);
     this.app = app;
-    this.app.stage.addChild(this.container);
   }
 
   public addEventListener(type: EventType, callback: () => void) {

@@ -150,11 +150,11 @@ export default class IObject extends ObjectWithSprites {
     };
   }
 
-  public attach(container: Container) {
-    this.getSprite().attach(container);
+  public attachAt(container: Container) {
+    this.getSprite().attachAt(container);
   }
 
-  public detach(container: Container) {
-    this.getSprite().detach(container);
+  public detach() {
+    this.getSprite().detach();
   }
 }
