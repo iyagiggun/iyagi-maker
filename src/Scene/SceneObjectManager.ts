@@ -30,7 +30,7 @@ class SceneObjectManager extends SceneBase {
     if (!obj.isPassable()) {
       this.blockingObjectList.push(obj);
     }
-    obj.attach(this.container);
+    obj.attachAt(this.container);
   }
 
   public removeObject(obj: IObject) {
@@ -39,7 +39,7 @@ class SceneObjectManager extends SceneBase {
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
     this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-    obj.detach(this.container);
+    obj.detach();
   }
 
   protected getObjectNextX(target: IObject, dist: number) {

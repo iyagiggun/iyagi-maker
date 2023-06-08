@@ -212,6 +212,9 @@ export default class ISprite extends EventTarget {
   }
 
   public attachAt(container: Container) {
+    if (this.container) {
+      this.detach();
+    }
     this.container = container;
     this.container.addChild(this.getSprite());
   }

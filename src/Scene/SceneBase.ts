@@ -26,8 +26,11 @@ class SceneBase extends EventTarget {
   }
 
   public attachAt(app: Application) {
-    app.stage.addChild(this.container);
+    if (this.app) {
+      this.detach();
+    }
     this.app = app;
+    this.app.stage.addChild(this.container);
   }
 
   public addEventListener(type: EventType, callback: () => void) {
