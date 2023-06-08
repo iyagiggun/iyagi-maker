@@ -5,8 +5,7 @@ import {
   Texture,
 } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
-import ISprite from './ISprite';
-import ObjectWithSprites from './ObjectWithSprites';
+import ObjectWithSprites, { SpriteMap } from './ObjectWithSprites';
 
 export type IDirection = 'up' | 'down' | 'left' | 'right';
 
@@ -22,10 +21,7 @@ export type IObjectInfo = {
   visible?: boolean;
   passable?: boolean;
 
-  sprites: {
-    default: ISprite;
-    [key: string]: ISprite;
-  }
+  sprites: SpriteMap;
 };
 
 const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };

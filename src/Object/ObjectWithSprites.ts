@@ -1,20 +1,19 @@
 import ISprite, { IDirection, getDirection } from './ISprite';
 import ObjectBase from './ObjectBase';
 
+export type SpriteMap = {
+  default: ISprite;
+  [key: string]: ISprite
+};
+
 export default class ObjectWithSprites extends ObjectBase {
   private current: ISprite | undefined;
 
-  private spriteMap: {
-    default: ISprite;
-    [key: string]: ISprite
-  };
+  private spriteMap: SpriteMap;
 
   private doing = false;
 
-  constructor(name: string, spriteMap : {
-    default: ISprite;
-    [key: string]: ISprite;
-  }) {
+  constructor(name: string, spriteMap: SpriteMap) {
     super(name);
     this.spriteMap = spriteMap;
   }
@@ -103,6 +102,7 @@ export default class ObjectWithSprites extends ObjectBase {
       throw new Error(`Fail to do "${spriteName}". no the sprite.`);
     }
     lastSprite.replace(spriteDo);
+    this.current = spriteDo;
 
     if (spriteDo.isAnimation()) {
       if (!spriteDo.isLoopAnimation()) {
@@ -111,6 +111,7 @@ export default class ObjectWithSprites extends ObjectBase {
           'onComplete',
           () => {
             spriteDo.replace(lastSprite);
+            this.current = lastSprite;
             this.doing = false;
           },
           { once: true },
