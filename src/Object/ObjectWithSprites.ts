@@ -93,32 +93,43 @@ export default class ObjectWithSprites extends ObjectBase {
   }
 
   public do(spriteName: string) {
-    if (this.doing) {
-      return;
-    }
-    const lastSprite = this.getSprite();
-    const spriteDo = this.spriteMap[spriteName];
-    if (!spriteDo) {
-      throw new Error(`Fail to do "${spriteName}". no the sprite.`);
-    }
-    lastSprite.replace(spriteDo);
-    this.current = spriteDo;
-
-    if (spriteDo.isAnimation()) {
-      if (!spriteDo.isLoopAnimation()) {
-        this.doing = true;
-        spriteDo.addEventListener(
-          'onComplete',
-          () => {
-            spriteDo.replace(lastSprite);
-            this.current = lastSprite;
-            this.doing = false;
-          },
-          { once: true },
-        );
+    return new Promise<void>((resolve) => {
+      if (this.doing) {
+        resolve();
+        return;
       }
+      const lastSprite = this.getSprite();
+      const spriteDo = this.spriteMap[spriteName];
+      if (!spriteDo) {
+        throw new Error(`Fail to do "${spriteName}". no the sprite.`);
+      }
+      lastSprite.replace(spriteDo);
+      this.current = spriteDo;
+
+      if (!spriteDo.isAnimation()) {
+        resolve();
+        return;
+      }
+
       spriteDo.play(undefined, 0);
-    }
+
+      if (spriteDo.isLoopAnimation()) {
+        resolve();
+        return;
+      }
+
+      this.doing = true;
+      spriteDo.addEventListener(
+        'onComplete',
+        () => {
+          spriteDo.replace(lastSprite);
+          this.current = lastSprite;
+          this.doing = false;
+          resolve();
+        },
+        { once: true },
+      );
+    });
   }
 
   public isDoing() {

@@ -11,4 +11,9 @@ export default class ICharacter<T> extends IObject {
   public getStatus() {
     return this.status;
   }
+
+  public setStatus(status: T) {
+    this.status = status;
+    return this;
+  }
 }
