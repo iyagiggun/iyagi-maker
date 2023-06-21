@@ -5,11 +5,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_es_1 = require("lodash-es");
 const pixi_js_1 = require("pixi.js");
-const SceneCamera_1 = __importDefault(require("./SceneCamera"));
 const Constant_1 = require("../Constant");
-const TalkBox_1 = require("./TalkBox");
 const Coordinate_1 = require("../Utils/Coordinate");
+const SceneCamera_1 = __importDefault(require("./SceneCamera"));
+const TalkBox_1 = require("./TalkBox");
 const REACTION_OVERLAP_THRESHOLD = 10;
+const getDirection = (deltaX, deltaY) => {
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        return deltaX > 0 ? 'right' : 'left';
+    }
+    return deltaY > 0 ? 'down' : 'up';
+};
 class SceneController extends SceneCamera_1.default {
     constructor() {
         super(...arguments);
@@ -29,7 +35,7 @@ class SceneController extends SceneCamera_1.default {
             const tick = () => {
                 const nextX = this.getObjectNextX(player, deltaX);
                 const nextY = this.getObjectNextY(player, deltaY);
-                player.setPos(nextX, nextY);
+                player.setPos([nextX, nextY]);
                 const [cameraX, cameraY] = this.getCameraPos(player);
                 this.container.x = cameraX;
                 this.container.y = cameraY;
@@ -79,7 +85,7 @@ class SceneController extends SceneCamera_1.default {
                 }
                 deltaX = Math.round((diffX * acc) / distance);
                 deltaY = Math.round((diffY * acc) / distance);
-                player.changeDirection(deltaX, deltaY);
+                player.setDirection(getDirection(deltaX, deltaY));
                 player.play(acc);
             }, 50);
             const onTouchEnd = (evt) => {
@@ -136,7 +142,7 @@ class SceneController extends SceneCamera_1.default {
         if (!target) {
             return null;
         }
-        return target.getReaction();
+        return target.reaction;
     }
     talk(speaker, message) {
         const { player } = this;
@@ -151,6 +157,50 @@ class SceneController extends SceneCamera_1.default {
                 }
                 resolve();
             });
+        });
+    }
+    moveCharacter(target, [destX, destY], speed, chaseCamera) {
+        return new Promise((resolve) => {
+            if (target.isDoing()) {
+                resolve();
+                return;
+            }
+            const { ticker } = this.getApplication();
+            const tick = () => {
+                const [curX, curY] = target.getPos();
+                const diffX = destX - curX;
+                const diffY = destY - curY;
+                const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+                let arrived = distance < speed;
+                if (arrived) {
+                    target.setPos([destX, destY]);
+                    target.stop();
+                }
+                else {
+                    const deltaX = speed * (diffX / distance);
+                    const deltaY = speed * (diffY / distance);
+                    const nextX = this.getObjectNextX(target, deltaX);
+                    const nextY = this.getObjectNextY(target, deltaY);
+                    target.setPos([nextX, nextY]);
+                    target.setDirection(getDirection(deltaX, deltaY));
+                    target.play(speed);
+                    if (curX === nextX && curY === nextY) {
+                        arrived = true;
+                    }
+                }
+                if (chaseCamera) {
+                    const [cameraX, cameraY] = this.getCameraPos(target);
+                    this.container.x = cameraX;
+                    this.container.y = cameraY;
+                }
+                if (arrived) {
+                    ticker.remove(tick);
+                    target.stop();
+                    resolve();
+                }
+            };
+            target.play(speed);
+            ticker.add(tick);
         });
     }
 }

@@ -1,6 +1,6 @@
 import { Graphics } from 'pixi.js';
-import IObject from '../Object';
-export declare const getTalkBox: (speaker: IObject, message: string, { width, height }: {
+import ICharacter from '../IObject/ICharacter';
+export declare const getTalkBox: (speaker: ICharacter, message: string, { width, height }: {
     width: number;
     height: number;
 }) => {

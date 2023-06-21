@@ -14,32 +14,42 @@ declare type ISpriteInfo = {
     right?: SpriteInfo;
     dir?: IDirection;
 };
+declare type ISpriteEventType = 'onFrameChange' | 'onComplete' | 'onLoop';
 export declare type IDirection = 'up' | 'down' | 'left' | 'right';
-export default class ISprite {
+export declare const getDirection: (deltaX: number, deltaY: number) => "up" | "down" | "left" | "right";
+export default class ISprite extends EventTarget {
     private name;
     private info;
     private sprite?;
     private loaded;
+    private container;
     private directionalSpriteMap;
     private collisionMod?;
     constructor(name: string, info: ISpriteInfo);
     load(): Promise<void>;
     private getSprite;
+    addEventListener(type: ISpriteEventType, callback: () => void, options?: {
+        once: boolean;
+    }): void;
     show(): this;
     hide(): this;
-    getCollisionMod(): Coords;
+    private getCollisionMod;
     getCollisionCoords(): number[];
     getWidth(): number;
     getHeight(): number;
     getPos(): [number, number];
     setPos(x: number, y: number, zMod?: number): this;
     getGlobalPos(): number[];
-    attach(container: Container): void;
-    detach(container: Container): void;
+    attachAt(container: Container): void;
+    detach(): void;
     getDirection(): IDirection;
     setDirection(direction: IDirection): this;
-    play(speed: number): void;
+    play(acc?: number, playPosition?: number): void;
     stop(): void;
     isPlaying(): boolean;
+    replace(next: ISprite): void;
+    getCurrentFrame(): number;
+    isLoopAnimation(): boolean;
+    isAnimation(): boolean;
 }
 export {};

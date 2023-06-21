@@ -9,42 +9,37 @@ class SceneObjectManager extends SceneBase_1.default {
     constructor(name, objectList) {
         super(name);
         this.objectList = objectList;
-        this.blockingObjectList = objectList.filter((obj) => !obj.isPassable());
     }
     load() {
         return Promise.all(this.objectList.map((obj) => obj.load()));
     }
     addObject(obj) {
         if (!obj.isLoaded()) {
-            throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
+            throw new Error(`Fail to add object. ${obj.name} is not loaded.`);
         }
         if (this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
+            throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
         }
         this.objectList.push(obj);
-        if (!obj.isPassable()) {
-            this.blockingObjectList.push(obj);
-        }
-        obj.attach(this.container);
+        this.container.addChild(obj);
     }
     removeObject(obj) {
         if (!this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
+            throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
         }
         this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-        this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-        obj.detach(this.container);
+        this.container.removeChild(obj);
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();
         const width = target.getWidth();
         const height = target.getHeight();
         const nextX = curX + dist;
-        const blockingObj = this.blockingObjectList.find((obj) => {
-            if (obj === target) {
+        const blockingObj = this.objectList.find((obj) => {
+            if (obj === target || obj.getZIndex() !== target.getZIndex()) {
                 return false;
             }
-            return (0, Coordinate_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionCoords());
+            return (0, Coordinate_1.isIntersecting)([nextX, curY, width, height], obj.getCollisionArea());
         });
         if (blockingObj) {
             const blockingObjX = blockingObj.getPos()[0];
@@ -57,12 +52,12 @@ class SceneObjectManager extends SceneBase_1.default {
         const width = target.getWidth();
         const height = target.getHeight();
         const nextY = curY + dist;
-        const blockingObj = this.blockingObjectList
+        const blockingObj = this.objectList
             .find((obj) => {
-            if (obj === target) {
+            if (obj === target || obj.getZIndex() !== target.getZIndex()) {
                 return false;
             }
-            return (0, Coordinate_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionCoords());
+            return (0, Coordinate_1.isIntersecting)([curX, nextY, width, height], obj.getCollisionArea());
         });
         if (blockingObj) {
             const blockingObjY = blockingObj.getPos()[1];
@@ -71,7 +66,7 @@ class SceneObjectManager extends SceneBase_1.default {
         return nextY;
     }
     getIntersectingObjectList(coords) {
-        return this.objectList.filter((obj) => (0, Coordinate_1.isIntersecting)(coords, obj.getCollisionCoords()));
+        return this.objectList.filter((obj) => (0, Coordinate_1.isIntersecting)(coords, obj.getCollisionArea()));
     }
 }
 exports.default = SceneObjectManager;

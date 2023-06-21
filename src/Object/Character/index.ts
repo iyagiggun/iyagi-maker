@@ -14,6 +14,7 @@ export default class ICharacter<T> extends IObject {
 
   public setStatus(status: T) {
     this.status = status;
+    this.dispatchEvent(new CustomEvent('statusChange'));
     return this;
   }
 }

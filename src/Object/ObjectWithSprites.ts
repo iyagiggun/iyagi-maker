@@ -25,18 +25,9 @@ export default class ObjectWithSprites extends ObjectBase {
 
   protected getSprite() {
     if (!this.current) {
-      throw new Error(`Fail to get "${this.name}" sprite.`);
+      throw new Error(`Fail to get "${this.getName()}" sprite.`);
     }
     return this.current;
-  }
-
-  public getPos(): [number, number] {
-    return this.getSprite().getPos();
-  }
-
-  public setPos(x: number, y: number, zMod = 0) {
-    this.getSprite().setPos(x, y, zMod);
-    return this;
   }
 
   public getWidth() {
@@ -45,10 +36,6 @@ export default class ObjectWithSprites extends ObjectBase {
 
   public getHeight() {
     return this.getSprite().getHeight();
-  }
-
-  public getGlobalPos() {
-    return this.getSprite().getGlobalPos();
   }
 
   public getCollisionCoords() {
@@ -66,6 +53,19 @@ export default class ObjectWithSprites extends ObjectBase {
   public setDirection(direction: IDirection) {
     this.getSprite().setDirection(direction);
     return this;
+  }
+
+  public getPos(): [number, number] {
+    return this.getSprite().getPos();
+  }
+
+  public setPos(x: number, y: number, zMod = 0) {
+    this.getSprite().setPos(x, y, zMod);
+    return this;
+  }
+
+  public getGlobalPos() {
+    return this.getSprite().getGlobalPos();
   }
 
   public play(acc = 1) {

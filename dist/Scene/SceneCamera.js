@@ -3,13 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const IObject_1 = require("../IObject");
 const SceneObjectManager_1 = __importDefault(require("./SceneObjectManager"));
 class SceneCamera extends SceneObjectManager_1.default {
     getCameraPos(target) {
         if (!this.objectList.includes(target)) {
-            throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
+            throw new Error(`Fail to focus. ${target.name}. no the target in scene "${this.name}".`);
         }
-        const [targetCenterX, targetCenterY] = target.getCenterPos();
+        const [targetCenterX, targetCenterY] = (0, IObject_1.getCenterPos)(target);
         const { width: appWidth, height: appHeight } = this.getApplication().view;
         const destX = Math.round((appWidth / 2) - targetCenterX);
         const destY = Math.round((appHeight / 2) - targetCenterY);

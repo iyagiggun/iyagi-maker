@@ -1,59 +1,52 @@
-import IObject from '../Object';
+import { IObjectInterface } from '../IObject';
 import { Coords, isIntersecting } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 
 export type EventType = 'start';
 
 class SceneObjectManager extends SceneBase {
-  protected objectList: IObject[];
+  protected objectList: IObjectInterface[];
 
-  protected blockingObjectList: IObject[];
-
-  constructor(name: string, objectList: IObject[]) {
+  constructor(name: string, objectList: IObjectInterface[]) {
     super(name);
     this.objectList = objectList;
-    this.blockingObjectList = objectList.filter((obj) => !obj.isPassable());
   }
 
   public load() {
     return Promise.all(this.objectList.map((obj) => obj.load()));
   }
 
-  public addObject(obj: IObject) {
+  public addObject(obj: IObjectInterface) {
     if (!obj.isLoaded()) {
-      throw new Error(`Fail to add object. ${obj.getName()} is not loaded.`);
+      throw new Error(`Fail to add object. ${obj.name} is not loaded.`);
     }
     if (this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
+      throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
     }
     this.objectList.push(obj);
-    if (!obj.isPassable()) {
-      this.blockingObjectList.push(obj);
-    }
-    obj.attachAt(this.container);
+    this.container.addChild(obj);
   }
 
-  public removeObject(obj: IObject) {
+  public removeObject(obj: IObjectInterface) {
     if (!this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
+      throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-    this.blockingObjectList = this.blockingObjectList.filter((_obj) => _obj !== obj);
-    obj.detach();
+    this.container.removeChild(obj);
   }
 
-  protected getObjectNextX(target: IObject, dist: number) {
+  protected getObjectNextX(target: IObjectInterface, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();
     const nextX = curX + dist;
-    const blockingObj = this.blockingObjectList.find((obj) => {
-      if (obj === target) {
+    const blockingObj = this.objectList.find((obj) => {
+      if (obj === target || obj.getZIndex() !== target.getZIndex()) {
         return false;
       }
       return isIntersecting(
         [nextX, curY, width, height],
-        obj.getCollisionCoords(),
+        obj.getCollisionArea(),
       );
     });
 
@@ -64,18 +57,18 @@ class SceneObjectManager extends SceneBase {
     return nextX;
   }
 
-  protected getObjectNextY(target: IObject, dist: number) {
+  protected getObjectNextY(target: IObjectInterface, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();
     const nextY = curY + dist;
 
-    const blockingObj = this.blockingObjectList
+    const blockingObj = this.objectList
       .find((obj) => {
-        if (obj === target) {
+        if (obj === target || obj.getZIndex() !== target.getZIndex()) {
           return false;
         }
-        return isIntersecting([curX, nextY, width, height], obj.getCollisionCoords());
+        return isIntersecting([curX, nextY, width, height], obj.getCollisionArea());
       });
 
     if (blockingObj) {
@@ -86,7 +79,7 @@ class SceneObjectManager extends SceneBase {
   }
 
   public getIntersectingObjectList(coords: Coords) {
-    return this.objectList.filter((obj) => isIntersecting(coords, obj.getCollisionCoords()));
+    return this.objectList.filter((obj) => isIntersecting(coords, obj.getCollisionArea()));
   }
 }
 

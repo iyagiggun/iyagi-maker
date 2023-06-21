@@ -1,8 +1,9 @@
-import IObject from '../Object';
+import { getCoordinateRelationship } from '../IObject';
+import ICharacter from '../IObject/ICharacter';
 import IScene from '../Scene';
 import { getDistance } from '../Utils/Coordinate';
 
-const findShortestPos = (attacker: IObject, target: IObject) => {
+const findShortestPos = (attacker: ICharacter, target: ICharacter) => {
   const attackerPos = attacker.getPos();
   const [tCX, tCY] = target.getPos();
   const tWidth = target.getWidth();
@@ -25,8 +26,8 @@ const findShortestPos = (attacker: IObject, target: IObject) => {
 
 const IBasicTracking = (
   scene: IScene,
-  tracker: IObject,
-  target: IObject,
+  tracker: ICharacter,
+  target: ICharacter,
   onArrived?: () => void,
   interval = 250,
 ) => {
@@ -36,7 +37,7 @@ const IBasicTracking = (
       return;
     }
     isActing = true;
-    const { distance } = tracker.getCoordinateRelationship(target);
+    const { distance } = getCoordinateRelationship(tracker, target);
     if (distance < 10) {
       onArrived?.();
       isActing = false;

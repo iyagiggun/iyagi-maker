@@ -1,5 +1,9 @@
 export default class ObjectBase extends EventTarget {
-  constructor(protected name: string) {
+  constructor(private name: string) {
     super();
+  }
+
+  public getName() {
+    return this.name;
   }
 }

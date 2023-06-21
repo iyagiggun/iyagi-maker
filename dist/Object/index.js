@@ -1,18 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
+const ObjectWithSprites_1 = __importDefault(require("./ObjectWithSprites"));
 const DEFAULT_PHOTO_INFO = { default: Constant_1.TRANSPARENT_1PX_IMG };
-const getDirection = (deltaX, deltaY) => {
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        return deltaX > 0 ? 'right' : 'left';
-    }
-    return deltaY > 0 ? 'down' : 'up';
-};
-class IObject {
+class IObject extends ObjectWithSprites_1.default {
     constructor(name, info) {
         var _a;
-        this.name = name;
+        super(name, info.sprites);
         this.info = info;
         this.loaded = false;
         this.passable = (_a = info.passable) !== null && _a !== void 0 ? _a : false;
@@ -25,20 +23,17 @@ class IObject {
         if (this.loaded) {
             return;
         }
-        await Promise.all(Object.values(this.info.sprites).map((sprite) => sprite.load()));
-        this.isprite = this.info.sprites.default;
+        await super.load();
         const [posX, posY, zMod] = this.info.pos || [0, 0];
         this.setPos(posX, posY, zMod);
         // Load Photo
+        const name = this.getName();
         const photoInfo = this.info.photoInfo || DEFAULT_PHOTO_INFO;
         const photoKeys = Object.keys(photoInfo);
-        photoKeys.forEach((key) => pixi_js_1.Assets.add(`${this.name}:${key}`, photoInfo[key]));
-        this.photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
-        this.photo.texture = this.photoTextureMap[`${this.name}:default`];
+        photoKeys.forEach((key) => pixi_js_1.Assets.add(`${name}:${key}`, photoInfo[key]));
+        this.photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${name}:${key}`));
+        this.photo.texture = this.photoTextureMap[`${name}:default`];
         this.loaded = true;
-    }
-    getName() {
-        return this.name;
     }
     getPhoto() {
         return this.photo;
@@ -49,15 +44,6 @@ class IObject {
         }
         // 없으면 pixi.js 에서 알아서 에러 생성해줌
         this.photo.texture = this.photoTextureMap[key];
-    }
-    getISprite() {
-        if (!this.isprite) {
-            throw new Error(`Fail to get "${this.name}" sprite.`);
-        }
-        return this.isprite;
-    }
-    getCollisionMod() {
-        return this.getISprite().getCollisionMod();
     }
     setReaction(reaction) {
         this.reaction = reaction;
@@ -71,54 +57,6 @@ class IObject {
     }
     isPassable() {
         return this.passable;
-    }
-    getPos() {
-        return this.getISprite().getPos();
-    }
-    setPos(x, y, zMod = 0) {
-        this.getISprite().setPos(x, y, zMod);
-        return this;
-    }
-    getWidth() {
-        return this.getISprite().getWidth();
-    }
-    getHeight() {
-        return this.getISprite().getHeight();
-    }
-    getGlobalPos() {
-        return this.getISprite().getGlobalPos();
-    }
-    getCollisionCoords() {
-        return this.getISprite().getCollisionCoords();
-    }
-    getDirection() {
-        return this.getISprite().getDirection();
-    }
-    changeDirection(deltaX, deltaY) {
-        return this.setDirection(getDirection(deltaX, deltaY));
-    }
-    setDirection(direction) {
-        this.getISprite().setDirection(direction);
-        return this;
-    }
-    play(_speed) {
-        this.getISprite().play(_speed);
-        return this;
-    }
-    isPlaying() {
-        return this.getISprite().isPlaying();
-    }
-    stop() {
-        this.getISprite().stop();
-        return this;
-    }
-    hide() {
-        this.getISprite().hide();
-        return this;
-    }
-    show() {
-        this.getISprite().show();
-        return this;
     }
     getCenterPos() {
         const [x, y] = this.getPos();
@@ -164,17 +102,11 @@ class IObject {
             distance, xDiff, yDiff,
         };
     }
-    attach(container) {
-        if (!this.isprite) {
-            throw new Error(`Fail to attach "${this.name}". no sprite.`);
-        }
-        this.isprite.attach(container);
+    attachAt(container) {
+        this.getSprite().attachAt(container);
     }
-    detach(container) {
-        if (!this.isprite) {
-            throw new Error(`Fail to detach "${this.name}". no sprite.`);
-        }
-        this.isprite.detach(container);
+    detach() {
+        this.getSprite().detach();
     }
 }
 exports.default = IObject;

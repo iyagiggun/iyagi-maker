@@ -30,7 +30,7 @@ const getTalkBox = (speaker, message, { width, height }) => {
     photo.x = 12;
     photo.y = talkBox.height - photoSize - 12;
     talkBox.addChild(photo);
-    const nameText = new pixi_js_1.Text(speaker.getName(), STYLE_NAME);
+    const nameText = new pixi_js_1.Text(speaker.name, STYLE_NAME);
     nameText.x = photo.x + photo.width + 12;
     nameText.y = 6;
     talkBox.addChild(nameText);

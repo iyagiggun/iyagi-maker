@@ -153,11 +153,6 @@ export default class ISprite extends EventTarget {
     super.addEventListener(type, callback, options);
   }
 
-  public dispatchEvent(event: CustomEvent<ISpriteEventType>) {
-    super.dispatchEvent(event);
-    return true;
-  }
-
   public show() {
     this.getSprite().visible = true;
     return this;
@@ -168,7 +163,7 @@ export default class ISprite extends EventTarget {
     return this;
   }
 
-  public getCollisionMod() {
+  private getCollisionMod() {
     if (!this.collisionMod) {
       const sprite = this.getSprite();
       return [0, 0, sprite.width, sprite.height];

@@ -1,12 +1,13 @@
-import IObject from '../Object';
+import ICharacter from '../IObject/ICharacter';
 import SceneCamera from './SceneCamera';
 declare type ControlMode = 'battle' | 'peace';
 export default class SceneController extends SceneCamera {
     private controlMode;
     private player?;
     private controller?;
-    control(player: IObject, mode: ControlMode): void;
+    control(player: ICharacter, mode: ControlMode): void;
     private getInteraction;
-    talk(speaker: IObject, message: string): Promise<void>;
+    talk(speaker: ICharacter, message: string): Promise<void>;
+    moveCharacter(target: ICharacter, [destX, destY]: [number, number], speed: number, chaseCamera: boolean): Promise<void>;
 }
 export {};

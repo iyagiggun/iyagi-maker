@@ -56,17 +56,14 @@ export default class IObject extends ObjectWithSprites {
     this.setPos(posX, posY, zMod);
 
     // Load Photo
+    const name = this.getName();
     const photoInfo: { [key: string]: string } = this.info.photoInfo || DEFAULT_PHOTO_INFO;
     const photoKeys = Object.keys(photoInfo);
-    photoKeys.forEach((key) => Assets.add(`${this.name}:${key}`, photoInfo[key]));
-    this.photoTextureMap = await Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
-    this.photo.texture = this.photoTextureMap[`${this.name}:default`];
+    photoKeys.forEach((key) => Assets.add(`${name}:${key}`, photoInfo[key]));
+    this.photoTextureMap = await Assets.load(photoKeys.map((key) => `${name}:${key}`));
+    this.photo.texture = this.photoTextureMap[`${name}:default`];
 
     this.loaded = true;
-  }
-
-  public getName() {
-    return this.name;
   }
 
   public getPhoto() {
@@ -79,10 +76,6 @@ export default class IObject extends ObjectWithSprites {
     }
     // 없으면 pixi.js 에서 알아서 에러 생성해줌
     this.photo.texture = this.photoTextureMap[key];
-  }
-
-  public getCollisionMod() {
-    return this.getSprite().getCollisionMod();
   }
 
   public setReaction(reaction: () => Promise<void>) {

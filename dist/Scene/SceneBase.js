@@ -5,6 +5,7 @@ class SceneBase extends EventTarget {
     constructor(name) {
         super();
         this.name = name;
+        this.app = null;
         this.container = new pixi_js_1.Container();
         this.container.sortableChildren = true;
     }
@@ -14,7 +15,14 @@ class SceneBase extends EventTarget {
         }
         return this.app;
     }
-    setApplication(app) {
+    detach() {
+        this.getApplication().stage.removeChild(this.container);
+        this.app = null;
+    }
+    attachAt(app) {
+        if (this.app) {
+            this.detach();
+        }
         this.app = app;
         this.app.stage.addChild(this.container);
     }

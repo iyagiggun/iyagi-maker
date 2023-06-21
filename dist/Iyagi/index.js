@@ -12,13 +12,14 @@ class Iyagi {
             height: this.height,
         });
     }
-    play(scene) {
-        this.app.stage.removeChildren();
-        scene.load().then(() => {
-            scene.setApplication(this.app);
-            scene.drawMap();
-            scene.dispatchEvent(new CustomEvent('start'));
-        });
+    async play(scene) {
+        await scene.load();
+        if (this.currentScene) {
+            this.currentScene.detach();
+        }
+        scene.attachAt(this.app);
+        scene.drawMap();
+        scene.dispatchEvent(new CustomEvent('start'));
     }
 }
 exports.default = Iyagi;

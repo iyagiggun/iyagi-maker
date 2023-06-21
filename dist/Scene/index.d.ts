@@ -1,7 +1,7 @@
-import IObject from '../Object';
+import { DisplayObject } from 'pixi.js';
 import SceneController from './SceneController';
-export default class Scene extends SceneController {
+export default class IScene extends SceneController {
     private status;
     drawMap(): void;
-    moveCharacter(target: IObject, [destX, destY]: [number, number], speed: number, chaseCamera: boolean): Promise<void>;
+    addChild(child: DisplayObject): void;
 }
