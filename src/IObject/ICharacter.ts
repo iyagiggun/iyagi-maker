@@ -160,11 +160,9 @@ export default class ICharacter<T = void> extends Container implements IObjectIn
     if (!nextIObj) {
       throw new Error(`Fail to set direction. there is no "${dir}" IObject.`);
     }
-    const lastPos = this.getPos();
     this.removeChild(this.current);
 
     this.current = nextIObj;
-    this.current.setPos(lastPos);
     this.addChild(this.current);
   }
 

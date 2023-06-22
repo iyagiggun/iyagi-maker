@@ -1,7 +1,9 @@
 import {
-  AnimatedSprite, BaseTexture, Container, Sprite, Spritesheet, Texture,
+  AnimatedSprite, BaseTexture, Container,
+  Sprite, Spritesheet, Texture,
 } from 'pixi.js';
 import { Area, IObjectInterface, Pos } from '.';
+import { FRAMES_PER_SECOND } from '../Constant';
 
 export type IObjectProps = {
   name: string;
@@ -18,6 +20,7 @@ export type IObjectProps = {
  * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
  */
 const Z_INDEX_MOD = 10000;
+const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 
 const TEXTURE_MAP: { [key: string] : BaseTexture } = {};
 const getTexture = (spriteUrl: string) => {
@@ -85,7 +88,7 @@ export default class IObject extends Container implements IObjectInterface {
       },
     }).parse();
 
-    this.sprite = getSprite(Object.keys(this.frameMap), this.props.loop ?? false);
+    this.sprite = getSprite(Object.keys(this.frameMap), this.props.loop);
     this.addChild(this.sprite);
     if (this.props.pos) {
       this.setPos(this.props.pos);
@@ -156,20 +159,45 @@ export default class IObject extends Container implements IObjectInterface {
     return sprite instanceof AnimatedSprite;
   }
 
-  public play(acc?: number) {
-    if (!this.isAnimation()) {
+  public play(acc = 1, playPosition?: number) {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
       throw new Error(`Fail to play animation. "${this.name}" is not an animation.`);
     }
-    console.error('acc', acc);
-    this.play();
+    if (sprite.playing) {
+      return this;
+    }
+
+    if (!sprite.playing) {
+      // sprite.onFrameChange = () => {
+      //   this.dispatchEvent(new FederatedEvent('onFrameChange'));
+      // };
+      // sprite.onComplete = () => {
+      //   this.dispatchEvent(new Event('onComplete'));
+      // };
+      // sprite.onLoop = () => {
+      //   this.dispatchEvent(new Event('onLoop'));
+      // };
+      if (playPosition === undefined) {
+        sprite.play();
+      } else {
+        sprite.gotoAndPlay(playPosition);
+      }
+    } sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
+
+    sprite.play();
     return this;
   }
 
   public stop() {
-    if (!this.isAnimation()) {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
       throw new Error(`Fail to stop animation. "${this.name}" is not an animation.`);
     }
-    this.stop();
+    if (!sprite.playing) {
+      return this;
+    }
+    sprite.stop();
     return this;
   }
 }
