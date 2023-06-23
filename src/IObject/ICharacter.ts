@@ -2,7 +2,7 @@ import {
   Assets, Container, Sprite, Texture,
 } from 'pixi.js';
 import { IObjectInterface, Pos } from '.';
-import IObject, { IObjectProps } from './IObject';
+import IObject, { IObjectProps, Z_INDEX_MOD } from './IObject';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -71,6 +71,7 @@ export default class ICharacter<T = void> extends Container implements IObjectIn
       throw new Error(`Fail to create "${this.name}". There is now ${direction} IObject`);
     }
     this.current = current;
+    this.setZIndex(this.props.zIndex ?? 1);
   }
 
   public async load() {
@@ -122,12 +123,12 @@ export default class ICharacter<T = void> extends Container implements IObjectIn
 
   public getZIndex() {
     this.loadCheck();
-    return this.current.getZIndex();
+    return Math.floor(this.zIndex / Z_INDEX_MOD);
   }
 
-  public setZIndex(zIndex?: number) {
-    this.loadCheck();
-    this.current.setZIndex(zIndex);
+  public setZIndex(_zIndex?: number) {
+    const zIndex = _zIndex ?? Math.floor(this.zIndex / Z_INDEX_MOD);
+    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
     return this;
   }
 
@@ -142,7 +143,7 @@ export default class ICharacter<T = void> extends Container implements IObjectIn
     const [modX, modY] = this.getCollisionMod();
     this.x = x - modX;
     this.y = y - modY;
-    this.zIndex = this.getZIndex() + y;
+    this.setZIndex();
     return this;
   }
 

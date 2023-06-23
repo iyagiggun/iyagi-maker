@@ -19,7 +19,7 @@ export type IObjectProps = {
  * 높이를 나타내는 zIndex 는 y 값에 따라 보정이 필요하므로 해당 값만큼의 y값에 따른 보정이 가능하도록 함.
  * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
  */
-const Z_INDEX_MOD = 10000;
+export const Z_INDEX_MOD = 10000;
 const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 
 const TEXTURE_MAP: { [key: string] : BaseTexture } = {};
@@ -111,7 +111,7 @@ export default class IObject extends Container implements IObjectInterface {
     if (this.props.collisionMod) {
       return this.props.collisionMod;
     }
-    return [this.x, this.y, this.width, this.height];
+    return [0, 0, this.width, this.height];
   }
 
   public getCollisionArea(): Area {
@@ -135,7 +135,7 @@ export default class IObject extends Container implements IObjectInterface {
 
   public setZIndex(_zIndex?: number) {
     const zIndex = _zIndex ?? Math.floor(this.zIndex / Z_INDEX_MOD);
-    this.zIndex = zIndex * Z_INDEX_MOD + this.y;
+    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
     return this;
   }
 
