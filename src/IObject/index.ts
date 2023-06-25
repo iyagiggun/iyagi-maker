@@ -1,70 +1,200 @@
-import { Container } from 'pixi.js';
+import {
+  AnimatedSprite,
+  Container,
+} from 'pixi.js';
 
-export type Pos = [x: number, y:number];
-export type Area = [x: number, y: number, width: number, height: number];
+import { FRAMES_PER_SECOND } from '../Constant';
+import { Direction, Pos } from './type';
+import { Coords } from '../Utils/Coordinate';
+import ISprite from './ISprite';
 
-export const getCenterPos = (target: IObjectInterface): Pos => {
-  const [x, y] = target.getPos();
-  return [x + target.getWidth() / 2, y + target.getHeight() / 2];
+type AreaInfo = {
+  coordsList: Coords[];
+  collisionMod?: Coords;
 };
 
-export const getCoordinateRelationship = (self: IObjectInterface, target: IObjectInterface) => {
-  const [x, y] = getCenterPos(self);
-  const halfWidth = self.getWidth() / 2;
-  const halfHeight = self.getHeight() / 2;
-  const [tx, ty] = getCenterPos(target);
-  const tHalfWidth = target.getWidth() / 2;
-  const tHalfHeight = target.getHeight() / 2;
+type SpriteInfo = {
+  up?: AreaInfo;
+  down: AreaInfo;
+  left?: AreaInfo;
+  right?: AreaInfo;
+  loop?: boolean;
+};
 
-  const xDiff = tx - x;
-  const yDiff = ty - y;
-
-  // y 축이 동일하면 삼각함수 못씀
-  if (xDiff === 0) {
-    const distance = Math.abs(yDiff - halfHeight - tHalfHeight);
-    return {
-      distance, xDiff, yDiff,
-    };
-  }
-  // x 축이 동일하면 삼각함수 못씀
-  if (yDiff === 0) {
-    const distance = Math.abs(xDiff - halfWidth - tHalfWidth);
-    return {
-      distance, xDiff, yDiff,
-    };
-  }
-
-  // 중심점 간 거리
-  const cDistance = Math.sqrt(xDiff ** 2 + yDiff ** 2);
-  // x 축으로 겹쳐 있다면 sin 으로 구해야 함.
-  if (xDiff < halfWidth + tHalfWidth) {
-    const arcSin = Math.abs(cDistance / yDiff);
-    const distance = cDistance - arcSin * halfHeight - arcSin * tHalfHeight;
-    return {
-      distance, xDiff, yDiff,
-    };
-  }
-  // y축으로 겹쳐있거나 나머지의 경우는 cos 으로 구함.
-  const arcCos = Math.abs(cDistance / xDiff);
-  const distance = cDistance - arcCos * halfWidth - arcCos * tHalfWidth;
-  return {
-    distance, xDiff, yDiff,
+export type IObjectProps = {
+  name: string;
+  spriteImgUrl: string;
+  spriteInfoMap: {
+    default: SpriteInfo;
+    [key: string]: SpriteInfo;
   };
+  pos?: Pos;
+  dir?: Direction;
+  zIndex?: number;
 };
 
-export interface IObjectInterface extends Container {
-  reaction?: () => Promise<void>;
-  load: () => Promise<void>;
-  isLoaded: () => boolean;
-  getCollisionMod: () => Area;
-  getCollisionArea: () => Area;
-  getWidth: () => number;
-  getHeight: () => number;
-  getZIndex: () => number;
-  setZIndex: (zIndex?: number) => this;
-  getPos: () => Pos;
-  setPos: (pos: Pos) => this;
-  isAnimation: () => boolean;
-  play: () => this;
-  stop: () => this;
+/**
+ * 높이를 나타내는 zIndex 는 y 값에 따라 보정이 필요하므로 해당 값만큼의 y값에 따른 보정이 가능하도록 함.
+ * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
+ */
+export const Z_INDEX_MOD = 10000;
+const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
+
+export default class IObject extends Container {
+  private curISpriteKey?: string;
+
+  private iSpriteMap: {
+    [key: string]: ISprite;
+  };
+
+  private dir: Direction;
+
+  public reaction?: () => Promise<void>;
+
+  constructor(private props: IObjectProps) {
+    super();
+    this.name = props.name;
+
+    this.iSpriteMap = Object.keys(this.props.spriteInfoMap).reduce<{ [key: string]: ISprite }>((acc, key) => ({
+      ...acc,
+      [key]: new ISprite({
+        name: `${this.name}:${key}`,
+        imgUrl: this.props.spriteImgUrl,
+        ...this.props.spriteInfoMap[key],
+      }),
+    }), {});
+
+    this.dir = this.props.dir || 'down';
+    this.setZIndex(this.props.zIndex ?? 1);
+  }
+
+  public async load() {
+    if (this.curISpriteKey) {
+      return;
+    }
+    await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
+
+    this.curISpriteKey = 'default';
+
+    this.addChild(this.getSprite());
+
+    if (this.props.pos) {
+      this.setPos(this.props.pos);
+    }
+  }
+
+  public isLoaded() {
+    return !!this.curISpriteKey;
+  }
+
+  private getISprite() {
+    if (!this.curISpriteKey) {
+      throw new Error(`[IObject.getISprite] Not loaded. "${this.name}"`);
+    }
+    const iSprite = this.iSpriteMap[this.curISpriteKey];
+    return iSprite;
+  }
+
+  private getSprite() {
+    return this.getISprite().getSprite(this.dir);
+  }
+
+  public getCollisionMod() {
+    if (!this.curISpriteKey) {
+      throw new Error(`[IObject.getCollisionMod] Not loaded. "${this.name}"`);
+    }
+    return this.getISprite().getCollisionMod(this.dir);
+  }
+
+  public getCollisionArea(): Coords {
+    const [x, y] = this.getPos();
+    const [, , colsW, colsH] = this.getCollisionMod();
+    return [x, y, colsW, colsH];
+  }
+
+  public getWidth() {
+    return this.getCollisionMod()[2];
+  }
+
+  public getHeight() {
+    return this.getCollisionMod()[3];
+  }
+
+  public getZIndex() {
+    return Math.floor(this.zIndex / Z_INDEX_MOD);
+  }
+
+  public setZIndex(_zIndex?: number) {
+    const zIndex = _zIndex ?? Math.floor(this.zIndex / Z_INDEX_MOD);
+    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
+    return this;
+  }
+
+  public getPos(): Pos {
+    const [modX, modY] = this.getCollisionMod();
+    return [this.x + modX, this.y + modY];
+  }
+
+  public setPos([x, y]: Pos) {
+    const [modX, modY] = this.getCollisionMod();
+    this.x = x - modX;
+    this.y = y - modY;
+    this.setZIndex();
+    return this;
+  }
+
+  public getDirection() {
+    return this.dir;
+  }
+
+  public setDirection(nextDir: Direction) {
+    const lastDir = this.dir;
+    const curSprite = this.getSprite();
+    if (lastDir === nextDir) {
+      return this;
+    }
+    try {
+      const nextSprite = this.getISprite().getSprite(nextDir);
+      this.removeChild(curSprite);
+      this.addChild(nextSprite);
+      this.dir = nextDir;
+    } catch (e) {
+      this.dir = lastDir;
+      throw e;
+    }
+    return this;
+  }
+
+  public play(acc = 1, playPosition?: number) {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      throw new Error(`[IObject.play] Not AnimatedSprite. "${this.name}". "${this.curISpriteKey}. "${this.dir}"`);
+    }
+    if (!sprite.playing) {
+      if (playPosition === undefined) {
+        sprite.play();
+      } else {
+        sprite.gotoAndPlay(playPosition);
+      }
+    }
+    sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
+    return this;
+  }
+
+  public stop() {
+    const sprite = this.getSprite();
+    if (!(sprite instanceof AnimatedSprite)) {
+      throw new Error(`Fail to stop animation. "${this.name}" is not an animation.`);
+    }
+    if (!sprite.playing) {
+      return this;
+    }
+    sprite.stop();
+    return this;
+  }
+
+  public getCenterPos() {
+    const [x, y] = this.getPos();
+    return [x + this.getWidth() / 2, y + this.getHeight() / 2];
+  }
 }

@@ -1,86 +1,54 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Z_INDEX_MOD = void 0;
 const pixi_js_1 = require("pixi.js");
+const Constant_1 = require("../Constant");
 /**
  * 높이를 나타내는 zIndex 는 y 값에 따라 보정이 필요하므로 해당 값만큼의 y값에 따른 보정이 가능하도록 함.
  * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
  */
-const Z_INDEX_MOD = 10000;
-const TEXTURE_MAP = {};
-const getTexture = (spriteUrl) => {
-    if (!TEXTURE_MAP[spriteUrl]) {
-        TEXTURE_MAP[spriteUrl] = pixi_js_1.BaseTexture.from(spriteUrl);
-    }
-    return TEXTURE_MAP[spriteUrl];
-};
-const areaListToFrame = (prefix) => (areaList) => {
-    if (!areaList) {
-        return {};
-    }
-    return areaList.reduce((frames, [x, y, w, h], idx) => ({
-        ...frames,
-        [`${prefix}-${idx}`]: {
-            frame: {
-                x, y, w, h,
-            },
-        },
-    }), {});
-};
-const getSprite = (frameKeyList, loop = true) => {
-    if (frameKeyList.length === 1) {
-        return pixi_js_1.Sprite.from(frameKeyList[0]);
-    }
-    if (frameKeyList.length > 1) {
-        const aSprite = new pixi_js_1.AnimatedSprite(frameKeyList.map((key) => pixi_js_1.Texture.from(key)));
-        aSprite.loop = loop;
-        return aSprite;
-    }
-    throw new Error(`Fail to get sprite. invalid frameKeyList. ${JSON.stringify(frameKeyList)}`);
-};
+exports.Z_INDEX_MOD = 10000;
+const DEFAULT_ANIMATION_SPEED = 6 / Constant_1.FRAMES_PER_SECOND; // 10 fps
 class IObject extends pixi_js_1.Container {
     constructor(props) {
         var _a;
         super();
         this.props = props;
         this.name = props.name;
-        this.frameMap = areaListToFrame(`${props.name}-frame`)(props.spriteAreaList);
+        this.dir = this.props.dir || 'down';
         this.setZIndex((_a = this.props.zIndex) !== null && _a !== void 0 ? _a : 1);
     }
     async load() {
-        var _a;
-        if (this.sprite) {
+        if (this.curISpriteKey) {
             return;
         }
-        await new pixi_js_1.Spritesheet(getTexture(this.props.spriteUrl), {
-            frames: this.frameMap,
-            meta: {
-                scale: '1',
-            },
-        }).parse();
-        this.sprite = getSprite(Object.keys(this.frameMap), (_a = this.props.loop) !== null && _a !== void 0 ? _a : false);
-        this.addChild(this.sprite);
+        await Promise.all(Object.values(this.props.iSpriteMap).map((iSprite) => iSprite.load()));
+        this.curISpriteKey = 'default';
+        this.addChild(this.getSprite());
         if (this.props.pos) {
             this.setPos(this.props.pos);
         }
     }
     isLoaded() {
-        return !!this.sprite;
+        return !!this.curISpriteKey;
+    }
+    getISprite() {
+        if (!this.curISpriteKey) {
+            throw new Error(`[IObject.getISprite] Not loaded. "${this.name}"`);
+        }
+        const iSprite = this.props.iSpriteMap[this.curISpriteKey];
+        return iSprite;
     }
     getSprite() {
-        if (!this.sprite) {
-            throw new Error(`"${this.name}" is not loaded.`);
-        }
-        return this.sprite;
+        return this.getISprite().getSprite(this.dir);
     }
     getCollisionMod() {
-        this.getSprite();
-        if (this.props.collisionMod) {
-            return this.props.collisionMod;
+        if (!this.curISpriteKey) {
+            throw new Error(`[IObject.getCollisionMod] Not loaded. "${this.name}"`);
         }
-        return [this.x, this.y, this.width, this.height];
+        return this.getISprite().getCollisionMod(this.dir);
     }
     getCollisionArea() {
-        this.getSprite();
         const [x, y] = this.getPos();
         const [, , colsW, colsH] = this.getCollisionMod();
         return [x, y, colsW, colsH];
@@ -92,44 +60,74 @@ class IObject extends pixi_js_1.Container {
         return this.getCollisionMod()[3];
     }
     getZIndex() {
-        return Math.floor(this.zIndex / Z_INDEX_MOD);
+        return Math.floor(this.zIndex / exports.Z_INDEX_MOD);
     }
     setZIndex(_zIndex) {
-        const zIndex = _zIndex !== null && _zIndex !== void 0 ? _zIndex : Math.floor(this.zIndex / Z_INDEX_MOD);
-        this.zIndex = zIndex * Z_INDEX_MOD + this.y;
+        const zIndex = _zIndex !== null && _zIndex !== void 0 ? _zIndex : Math.floor(this.zIndex / exports.Z_INDEX_MOD);
+        this.zIndex = zIndex * exports.Z_INDEX_MOD + this.y + this.height;
         return this;
     }
     getPos() {
-        this.getSprite();
         const [modX, modY] = this.getCollisionMod();
         return [this.x + modX, this.y + modY];
     }
     setPos([x, y]) {
-        this.getSprite();
         const [modX, modY] = this.getCollisionMod();
         this.x = x - modX;
         this.y = y - modY;
         this.setZIndex();
         return this;
     }
-    isAnimation() {
-        const sprite = this.getSprite();
-        return sprite instanceof pixi_js_1.AnimatedSprite;
+    getDirection() {
+        return this.dir;
     }
-    play(acc) {
-        if (!this.isAnimation()) {
-            throw new Error(`Fail to play animation. "${this.name}" is not an animation.`);
+    setDirection(nextDir) {
+        const lastDir = this.dir;
+        const curSprite = this.getSprite();
+        if (lastDir === nextDir) {
+            return;
         }
-        console.error('acc', acc);
-        this.play();
+        try {
+            const nextSprite = this.getISprite().getSprite(nextDir);
+            this.removeChild(curSprite);
+            this.addChild(nextSprite);
+            this.dir = nextDir;
+        }
+        catch (e) {
+            this.dir = lastDir;
+            throw e;
+        }
+    }
+    play(acc = 1, playPosition) {
+        const sprite = this.getSprite();
+        if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
+            throw new Error(`[IObject.play] Not AnimatedSprite. "${this.name}". "${this.curISpriteKey}. "${this.dir}"`);
+        }
+        if (!sprite.playing) {
+            if (playPosition === undefined) {
+                sprite.play();
+            }
+            else {
+                sprite.gotoAndPlay(playPosition);
+            }
+        }
+        sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
         return this;
     }
     stop() {
-        if (!this.isAnimation()) {
+        const sprite = this.getSprite();
+        if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
             throw new Error(`Fail to stop animation. "${this.name}" is not an animation.`);
         }
-        this.stop();
+        if (!sprite.playing) {
+            return this;
+        }
+        sprite.stop();
         return this;
+    }
+    getCenterPos() {
+        const [x, y] = this.getPos();
+        return [x + this.getWidth() / 2, y + this.getHeight() / 2];
     }
 }
 exports.default = IObject;

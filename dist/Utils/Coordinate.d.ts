@@ -1,4 +1,4 @@
-export declare type Coords = number[];
+export declare type Coords = [x: number, y: number, width: number, height: number];
 export declare const COORDS_X_IDX = 0;
 export declare const COORDS_Y_IDX = 1;
 export declare const COORDS_W_IDX = 2;

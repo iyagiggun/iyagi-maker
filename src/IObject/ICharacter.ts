@@ -1,86 +1,44 @@
 import {
-  Assets, Container, Sprite, Texture,
+  Assets,
+  Sprite, Texture,
 } from 'pixi.js';
-import { IObjectInterface, Pos } from '.';
-import IObject, { IObjectProps, Z_INDEX_MOD } from './IObject';
+import IObject, { IObjectProps } from '.';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 
-type Direction = 'up' | 'down' | 'left' | 'right';
-
-export type ICharacterProps = {
-  name: string;
-  spriteUrl: string;
-  iObjectMap: {
-    up?: SubIObjectProps,
-    down: SubIObjectProps;
-    left?: SubIObjectProps;
-    right?: SubIObjectProps;
-    [key: string]: SubIObjectProps | undefined;
-  };
-  pos?: Pos;
-  zIndex?: number;
-  direction?: Direction;
+export type ICharacterProps = IObjectProps & {
   photoMap?: {
     default: string;
     [key: string]: string;
   }
 };
 
-type SubIObjectProps = Omit<IObjectProps, 'name' | 'spriteUrl'>;
-
 const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };
 
-export default class ICharacter<T = void> extends Container implements IObjectInterface {
-  private status: T;
-
+export default class ICharacter<T = void> extends IObject {
   private loaded = false;
 
-  private current: IObject;
-
-  public reaction?: () => Promise<void>;
-
-  private iObjectMap: {
-    [key: string]: IObject;
-  } = {};
+  private status: T;
 
   private photo?: Sprite;
 
   private photoTextureMap?: { [key: string]: Texture };
 
-  constructor(private props: ICharacterProps & {
+  constructor(private cProps: ICharacterProps & {
     status: T
   }) {
-    super();
-    this.name = props.name;
+    super(cProps);
+    this.name = cProps.name;
 
-    this.iObjectMap = Object.keys(this.props.iObjectMap).reduce<{ [key:string]: IObject }>((acc, key) => {
-      const subIObjectProps = this.props.iObjectMap[key];
-      if (subIObjectProps) {
-        acc[key] = new IObject({
-          name: `${this.name}:${key}`,
-          spriteUrl: this.props.spriteUrl,
-          ...subIObjectProps,
-        });
-      }
-      return acc;
-    }, {});
-    this.status = props.status;
-    const direction = props.direction || 'down';
-    const current = this.iObjectMap[direction];
-    if (!current) {
-      throw new Error(`Fail to create "${this.name}". There is now ${direction} IObject`);
-    }
-    this.current = current;
-    this.setZIndex(this.props.zIndex ?? 1);
+    this.status = cProps.status;
   }
 
   public async load() {
     if (this.loaded) {
       return;
     }
-    await Promise.all(Object.values(this.iObjectMap).map((iObject) => iObject?.load()));
+    await super.load();
 
-    const photoMap: { [key: string]: string } = this.props.photoMap || DEFAULT_PHOTO_INFO;
+    const photoMap: { [key: string]: string } = this.cProps.photoMap || DEFAULT_PHOTO_INFO;
     const photoKeys = Object.keys(photoMap);
     photoKeys.forEach((key) => Assets.add(`${this.name}:${key}`, photoMap[key]));
     this.photoTextureMap = await Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
@@ -88,100 +46,6 @@ export default class ICharacter<T = void> extends Container implements IObjectIn
     this.photo.texture = this.photoTextureMap[`${this.name}:default`];
 
     this.loaded = true;
-    this.setDirection(this.props.direction || 'down');
-  }
-
-  public isLoaded() {
-    return this.loaded;
-  }
-
-  private loadCheck() {
-    if (!this.loaded) {
-      throw new Error(`"${this.name}" is not loaded.`);
-    }
-  }
-
-  public getCollisionMod() {
-    this.loadCheck();
-    return this.current.getCollisionMod();
-  }
-
-  public getCollisionArea() {
-    this.loadCheck();
-    return this.current.getCollisionArea();
-  }
-
-  public getWidth() {
-    this.loadCheck();
-    return this.current.getWidth();
-  }
-
-  public getHeight() {
-    this.loadCheck();
-    return this.current.getHeight();
-  }
-
-  public getZIndex() {
-    this.loadCheck();
-    return Math.floor(this.zIndex / Z_INDEX_MOD);
-  }
-
-  public setZIndex(_zIndex?: number) {
-    const zIndex = _zIndex ?? Math.floor(this.zIndex / Z_INDEX_MOD);
-    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
-    return this;
-  }
-
-  public getPos(): Pos {
-    this.loadCheck();
-    const [modX, modY] = this.getCollisionMod();
-    return [this.x + modX, this.y + modY];
-  }
-
-  public setPos([x, y]: Pos) {
-    this.loadCheck();
-    const [modX, modY] = this.getCollisionMod();
-    this.x = x - modX;
-    this.y = y - modY;
-    this.setZIndex();
-    return this;
-  }
-
-  public getDirection() {
-    const directions: Direction[] = ['up', 'down', 'left', 'right'];
-    const direction = directions.find((dir) => this.current === this.iObjectMap[dir]);
-    if (!direction) {
-      throw new Error('Fail to get direction. no direciton.');
-    }
-    return direction;
-  }
-
-  public setDirection(dir: Direction) {
-    const nextIObj = this.iObjectMap[dir];
-    if (!nextIObj) {
-      throw new Error(`Fail to set direction. there is no "${dir}" IObject.`);
-    }
-    this.removeChild(this.current);
-
-    this.current = nextIObj;
-    this.addChild(this.current);
-  }
-
-  public isAnimation() {
-    this.loadCheck();
-    return this.current.isAnimation();
-  }
-
-  public play(acc?: number) {
-    this.loadCheck();
-    this.current.play(acc);
-    return this;
-  }
-
-  public stop() {
-    this.loadCheck();
-    this.current.stop();
-    return this;
   }
 
   public getPhoto() {

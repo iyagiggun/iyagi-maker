@@ -1,11 +1,10 @@
 import IBasicTracking from './AI/BasicTracking';
+import IObject from './IObject';
 import ICharacter from './IObject/ICharacter';
-import IObject from './IObject/IObject';
 import Iyagi from './Iyagi';
-import ISprite from './Object/ISprite';
 import IScene from './Scene';
 
 export {
-  IBasicTracking, ICharacter, IObject, IScene, ISprite,
+  IBasicTracking, ICharacter, IObject, IScene,
 };
 export default Iyagi;

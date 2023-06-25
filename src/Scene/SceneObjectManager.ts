@@ -1,13 +1,13 @@
-import { IObjectInterface } from '../IObject';
+import IObject from '../IObject';
 import { Coords, isIntersecting } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 
 export type EventType = 'start';
 
 class SceneObjectManager extends SceneBase {
-  protected objectList: IObjectInterface[];
+  protected objectList: IObject[];
 
-  constructor(name: string, objectList: IObjectInterface[]) {
+  constructor(name: string, objectList: IObject[]) {
     super(name);
     this.objectList = objectList;
   }
@@ -16,7 +16,7 @@ class SceneObjectManager extends SceneBase {
     return Promise.all(this.objectList.map((obj) => obj.load()));
   }
 
-  public addObject(obj: IObjectInterface) {
+  public addObject(obj: IObject) {
     if (!obj.isLoaded()) {
       throw new Error(`Fail to add object. ${obj.name} is not loaded.`);
     }
@@ -27,7 +27,7 @@ class SceneObjectManager extends SceneBase {
     this.container.addChild(obj);
   }
 
-  public removeObject(obj: IObjectInterface) {
+  public removeObject(obj: IObject) {
     if (!this.objectList.includes(obj)) {
       throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
     }
@@ -35,7 +35,7 @@ class SceneObjectManager extends SceneBase {
     this.container.removeChild(obj);
   }
 
-  protected getObjectNextX(target: IObjectInterface, dist: number) {
+  protected getObjectNextX(target: IObject, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();
@@ -57,7 +57,7 @@ class SceneObjectManager extends SceneBase {
     return nextX;
   }
 
-  protected getObjectNextY(target: IObjectInterface, dist: number) {
+  protected getObjectNextY(target: IObject, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();

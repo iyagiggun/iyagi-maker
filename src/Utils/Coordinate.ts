@@ -1,4 +1,4 @@
-export type Coords = number[];
+export type Coords = [x: number, y: number, width: number, height: number];
 
 export const COORDS_X_IDX = 0;
 export const COORDS_Y_IDX = 1;
