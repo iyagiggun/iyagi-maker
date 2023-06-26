@@ -1,4 +1,5 @@
 import {
+  AnimatedSprite,
   Assets,
   Sprite, Texture,
 } from 'pixi.js';
@@ -23,12 +24,13 @@ export default class ICharacter<T = void> extends IObject {
 
   private photoTextureMap?: { [key: string]: Texture };
 
+  private doing = false;
+
   constructor(private cProps: ICharacterProps & {
     status: T
   }) {
     super(cProps);
     this.name = cProps.name;
-
     this.status = cProps.status;
   }
 
@@ -55,8 +57,33 @@ export default class ICharacter<T = void> extends IObject {
     return this.photo;
   }
 
+  public do(actionSpriteKey: string) {
+    if (this.doing) {
+      return;
+    }
+    this.doing = true;
+    const lastSpriteKey = this.getCurISpriteKey();
+    try {
+      this.change(actionSpriteKey);
+      const sprite = this.getSprite();
+      if (!(sprite instanceof AnimatedSprite)) {
+        throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+      }
+      const onComplete = () => {
+        this.change(lastSpriteKey);
+        this.doing = false;
+        sprite.onComplete = undefined;
+      };
+      sprite.gotoAndPlay(0);
+      sprite.onComplete = onComplete;
+      this.play();
+    } catch (e) {
+      this.change(lastSpriteKey);
+      throw e;
+    }
+  }
+
   public isDoing() {
-    console.error(this.name);
-    return false;
+    return this.doing;
   }
 }

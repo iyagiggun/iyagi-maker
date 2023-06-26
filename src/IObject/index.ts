@@ -87,6 +87,13 @@ export default class IObject extends Container {
     return !!this.curISpriteKey;
   }
 
+  protected getCurISpriteKey() {
+    if (!this.curISpriteKey) {
+      throw new Error(`[IObject.getCurISpriteKey] Not loaded. "${this.name}"`);
+    }
+    return this.curISpriteKey;
+  }
+
   private getISprite() {
     if (!this.curISpriteKey) {
       throw new Error(`[IObject.getISprite] Not loaded. "${this.name}"`);
@@ -95,7 +102,7 @@ export default class IObject extends Container {
     return iSprite;
   }
 
-  private getSprite() {
+  protected getSprite() {
     return this.getISprite().getSprite(this.dir);
   }
 
@@ -155,6 +162,9 @@ export default class IObject extends Container {
     }
     try {
       const nextSprite = this.getISprite().getSprite(nextDir);
+      if (curSprite instanceof AnimatedSprite) {
+        this.stop();
+      }
       this.removeChild(curSprite);
       this.addChild(nextSprite);
       this.dir = nextDir;
@@ -196,5 +206,19 @@ export default class IObject extends Container {
   public getCenterPos() {
     const [x, y] = this.getPos();
     return [x + this.getWidth() / 2, y + this.getHeight() / 2];
+  }
+
+  public change(spriteKey: string) {
+    const iSprite = this.iSpriteMap[spriteKey];
+    if (!iSprite) {
+      throw new Error(`[IObject.change] No the sprite. "${this.name}". ${spriteKey}.`);
+    }
+    const lastSprite = this.getSprite();
+    if (lastSprite instanceof AnimatedSprite) {
+      this.stop();
+    }
+    this.curISpriteKey = spriteKey;
+    this.removeChild(lastSprite);
+    this.addChild(this.getSprite());
   }
 }
