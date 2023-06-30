@@ -5,26 +5,21 @@ declare type AreaInfo = {
     coordsList: Coords[];
     collisionMod?: Coords;
 };
-declare type ISpriteProps = {
-    name: string;
-    imgUrl: string;
+declare type AreaInfoMap = {
     up?: AreaInfo;
     down: AreaInfo;
     left?: AreaInfo;
     right?: AreaInfo;
-    loop?: boolean;
-    dir?: Direction;
 };
 export default class ISprite {
-    private props;
+    private imgUrl;
+    private areaInfoMap;
+    private loop;
     private loaded;
-    private up?;
-    private down?;
-    private left?;
-    private right?;
-    constructor(props: ISpriteProps);
+    private spriteMap;
+    constructor(imgUrl: string, areaInfoMap: AreaInfoMap, loop?: boolean);
     load(): Promise<void>;
     getSprite(dir: Direction): Sprite;
-    getCollisionMod(dir: Direction): number[];
+    getCollisionMod(dir: Direction): Coords;
 }
 export {};

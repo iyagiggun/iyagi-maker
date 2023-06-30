@@ -59,6 +59,7 @@ class ISprite extends EventTarget {
     }
     async load() {
         var _a, _b, _c, _d, _e, _f, _g;
+        console.error('call!!!');
         if (this.loaded) {
             return;
         }
@@ -82,6 +83,7 @@ class ISprite extends EventTarget {
                 scale: '1',
             },
         }).parse();
+        console.error('loaded');
         this.directionalSpriteMap.up = getSprite(Object.keys(frames.up), (_d = this.info.up) === null || _d === void 0 ? void 0 : _d.loop);
         this.directionalSpriteMap.down = getSprite(Object.keys(frames.down), (_e = this.info.down) === null || _e === void 0 ? void 0 : _e.loop);
         this.directionalSpriteMap.left = getSprite(Object.keys(frames.left), (_f = this.info.left) === null || _f === void 0 ? void 0 : _f.loop);

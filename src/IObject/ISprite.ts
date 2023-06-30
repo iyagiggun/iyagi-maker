@@ -1,3 +1,5 @@
+/* eslint-disable no-underscore-dangle */
+// eslint-disable-next-line max-classes-per-file
 import {
   AnimatedSprite, BaseTexture, Sprite, Spritesheet, Texture,
 } from 'pixi.js';
@@ -46,29 +48,21 @@ type AreaInfo = {
   collisionMod?: Coords;
 };
 
-type ISpriteProps = {
-  name: string;
-  imgUrl: string;
+type AreaInfoMap = {
   up?: AreaInfo;
   down: AreaInfo;
   left?: AreaInfo;
   right?: AreaInfo;
-  loop?: boolean;
-  dir?: Direction;
 };
 
 export default class ISprite {
   private loaded = false;
 
-  private up?: Sprite;
+  private spriteMap: {
+    [key:string]: Sprite | undefined;
+  } = {};
 
-  private down?: Sprite;
-
-  private left?: Sprite;
-
-  private right?: Sprite;
-
-  constructor(private props: ISpriteProps) {
+  constructor(private imgUrl: string, private areaInfoMap: AreaInfoMap, private loop = true) {
 
   }
 
@@ -76,75 +70,70 @@ export default class ISprite {
     if (this.loaded) {
       return;
     }
-    const upFrames = coordsListToFrame(`${this.props.name}:up`, this.props.up?.coordsList);
-    const downFrames = coordsListToFrame(`${this.props.name}:down`, this.props.down?.coordsList);
-    const leftFrames = coordsListToFrame(`${this.props.name}:left`, this.props.left?.coordsList);
-    const rightFrames = coordsListToFrame(`${this.props.name}:right`, this.props.right?.coordsList);
-
-    await new Spritesheet(getTexture(this.props.imgUrl), {
-      frames: {
-        ...upFrames, ...downFrames, ...leftFrames, ...rightFrames,
-      },
-      meta: {
-        scale: '1',
-      },
-    }).parse();
-
-    this.up = getSprite(Object.keys(upFrames), this.props.loop);
-    this.down = getSprite(Object.keys(downFrames), this.props.loop);
-    this.left = getSprite(Object.keys(leftFrames), this.props.loop);
-    this.right = getSprite(Object.keys(rightFrames), this.props.loop);
-
+    const loadList = Object.keys(this.areaInfoMap).map(async (key) => {
+      switch (key) {
+        case 'up':
+        case 'down':
+        case 'left':
+        case 'right': {
+          const frames = coordsListToFrame(
+            `${this.imgUrl}:${key}`,
+            this.areaInfoMap[key]?.coordsList,
+          );
+          await new Spritesheet(getTexture(this.imgUrl || ''), {
+            frames: {
+              ...frames,
+            },
+            meta: {
+              scale: '1',
+            },
+          }).parse();
+          this.spriteMap[key] = getSprite(Object.keys(frames), this.loop);
+        }
+          break;
+        default:
+          throw new Error('[ISprite.load] Invalid key.');
+      }
+    });
+    await Promise.all(loadList);
     this.loaded = true;
   }
 
   public getSprite(dir: Direction) {
     if (!this.loaded) {
-      throw new Error(`[ISprite.getSprite] Not loaded. "${this.props.name}"`);
+      throw new Error('[ISprite.getSprite] Not loaded.');
     }
     let sprite: Sprite | undefined;
     switch (dir) {
       case 'up':
-        sprite = this.up;
-        break;
       case 'down':
-        sprite = this.down;
-        break;
       case 'left':
-        sprite = this.left;
-        break;
       case 'right':
-        sprite = this.right;
+        sprite = this.spriteMap[dir];
         break;
       default:
-        throw new Error(`[ISprite.getSprite] Invalid dir. ${dir}. "${this.props.name}"`);
+        throw new Error('[ISprite.getSprite] Invalid dir.');
     }
     if (!sprite) {
-      throw new Error(`[ISprite.getSprite] No sprite. ${dir}. "${this.props.name}"`);
+      throw new Error('[ISprite.getSprite] No sprite.');
     }
     return sprite;
   }
 
-  public getCollisionMod(dir: Direction) {
+  public getCollisionMod(dir: Direction): Coords {
     if (!this.loaded) {
-      throw new Error(`[ISprite.getCollisionMod] Not loaded. "${this.props.name}"`);
+      throw new Error('[ISprite.getCollisionMod] Not loaded.');
     }
     let collisionMod: Coords | undefined;
     switch (dir) {
       case 'up':
-        collisionMod = this.props.up?.collisionMod;
-        break;
       case 'down':
-        collisionMod = this.props.down.collisionMod;
-        break;
       case 'left':
-        collisionMod = this.props.left?.collisionMod;
-        break;
       case 'right':
-        collisionMod = this.props.right?.collisionMod;
+        collisionMod = this.areaInfoMap[dir]?.collisionMod;
         break;
       default:
-        throw new Error(`[ISprite.getCollisionMod] Invalid dir. ${dir}. "${this.props.name}"`);
+        throw new Error('[ISprite.getCollisionMod] Invalid dir.');
     }
     if (!collisionMod) {
       const sprite = this.getSprite(dir);

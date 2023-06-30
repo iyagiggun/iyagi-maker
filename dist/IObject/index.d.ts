@@ -1,50 +1,28 @@
 import { Container } from 'pixi.js';
-import { Direction, Pos } from './type';
 import { Coords } from '../Utils/Coordinate';
-declare type AreaInfo = {
-    coordsList: Coords[];
-    collisionMod?: Coords;
+import ISprite from './ISprite';
+import { Direction, Pos } from './type';
+export declare type ISpriteMap = {
+    default: ISprite;
+    [key: string]: ISprite;
 };
-declare type SpriteInfo = {
-    up?: AreaInfo;
-    down: AreaInfo;
-    left?: AreaInfo;
-    right?: AreaInfo;
-    loop?: boolean;
-};
-export declare type IObjectProps = {
-    name: string;
-    spriteImgUrl: string;
-    spriteInfoMap: {
-        default: SpriteInfo;
-        [key: string]: SpriteInfo;
-    };
-    pos?: Pos;
-    dir?: Direction;
-    zIndex?: number;
-};
-/**
- * 높이를 나타내는 zIndex 는 y 값에 따라 보정이 필요하므로 해당 값만큼의 y값에 따른 보정이 가능하도록 함.
- * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
- */
-export declare const Z_INDEX_MOD = 10000;
 export default class IObject extends Container {
-    private props;
-    private curISpriteKey?;
     private iSpriteMap;
+    protected loaded: boolean;
+    private iSprite;
     private dir;
+    private iZIndex;
     reaction?: () => Promise<void>;
-    constructor(props: IObjectProps);
+    constructor(name: string, iSpriteMap: ISpriteMap);
     load(): Promise<void>;
     isLoaded(): boolean;
-    private getISprite;
-    private getSprite;
-    getCollisionMod(): number[];
+    getSprite(): import("pixi.js").Sprite;
+    getCollisionMod(): Coords;
     getCollisionArea(): Coords;
     getWidth(): number;
     getHeight(): number;
     getZIndex(): number;
-    setZIndex(_zIndex?: number): this;
+    setZIndex(zIndex: number): void;
     getPos(): Pos;
     setPos([x, y]: Pos): this;
     getDirection(): Direction;
@@ -52,5 +30,5 @@ export default class IObject extends Container {
     play(acc?: number, playPosition?: number): this;
     stop(): this;
     getCenterPos(): number[];
+    change(spriteKey: string): void;
 }
-export {};

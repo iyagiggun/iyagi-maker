@@ -1,10 +1,10 @@
 import { throttle } from 'lodash-es';
 import { FederatedPointerEvent, Sprite } from 'pixi.js';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
-import ICharacter from '../IObject/ICharacter';
 import { getAcc } from '../Utils/Coordinate';
 import SceneCamera from './SceneCamera';
 import { getTalkBox } from './TalkBox';
+import ICharacter from '../IObject/ICharacter';
 
 type ControlMode = 'battle' | 'peace';
 

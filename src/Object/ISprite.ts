@@ -94,6 +94,7 @@ export default class ISprite extends EventTarget {
   }
 
   public async load() {
+    console.error('call!!!');
     if (this.loaded) {
       return;
     }
@@ -118,6 +119,8 @@ export default class ISprite extends EventTarget {
         scale: '1',
       },
     }).parse();
+
+    console.error('loaded');
 
     this.directionalSpriteMap.up = getSprite(
       Object.keys(frames.up),
