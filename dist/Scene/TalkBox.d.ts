@@ -1,5 +1,5 @@
 import { Graphics } from 'pixi.js';
-import ICharacter from '../IObject/ICharacter';
+import { ICharacter } from '../IObject/ICharacter';
 export declare const getTalkBox: (speaker: ICharacter, message: string, { width, height }: {
     width: number;
     height: number;

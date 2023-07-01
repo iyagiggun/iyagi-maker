@@ -1,5 +1,5 @@
-import IObject from '../IObject';
-import ICharacter from '../IObject/ICharacter';
+import { IObject } from '../IObject';
+import { ICharacter } from '../IObject/ICharacter';
 import IScene from '../Scene';
 import { getDistance } from '../Utils/Coordinate';
 

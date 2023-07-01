@@ -1,46 +1,37 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ICharacterMaker = exports.ICharacterPrototype = void 0;
 const pixi_js_1 = require("pixi.js");
-const _1 = __importDefault(require("."));
+const _1 = require(".");
 const Constant_1 = require("../Constant");
 const DEFAULT_PHOTO_INFO = { default: Constant_1.TRANSPARENT_1PX_IMG };
-class ICharacter extends _1.default {
-    constructor(name, iSpriteMap, photoMap) {
-        super(name, iSpriteMap);
-        this.photoMap = photoMap;
-        this.doing = false;
-        this.photoTextureMap = {};
-        this.photo = new pixi_js_1.Sprite();
-    }
+exports.ICharacterPrototype = Object.assign(Object.create(_1.IObjectPrototype), {
     async load() {
-        const photoMap = this.photoMap || DEFAULT_PHOTO_INFO;
+        const photoMap = this._photoMap;
         const photoKeys = Object.keys(photoMap);
         photoKeys.forEach((key) => pixi_js_1.Assets.add(`${this.name}:${key}`, photoMap[key]));
-        this.photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
-        this.photo.texture = this.photoTextureMap[`${this.name}:default`];
-        await super.load();
-    }
+        this._photoTextureMap = await pixi_js_1.Assets.load(photoKeys.map((key) => `${this.name}:${key}`));
+        this._photo.texture = this._photoTextureMap[`${this.name}:default`];
+        await _1.IObjectPrototype.load.call(this);
+    },
     getPhoto() {
-        return this.photo;
-    }
-    do(actionSpriteKey) {
-        if (this.doing) {
+        return this._photo;
+    },
+    do(actionISpriteKey) {
+        if (this._doing) {
             return;
         }
-        this.doing = true;
+        this._doing = true;
         // const lastSpriteKey = this.getCurISpriteKey();
         try {
-            this.change(actionSpriteKey);
+            this.change(actionISpriteKey);
             const sprite = this.getSprite();
             if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
-                throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+                throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionISpriteKey}`);
             }
             const onComplete = () => {
                 // this.change(lastSpriteKey);
-                this.doing = false;
+                this._doing = false;
                 sprite.onComplete = undefined;
             };
             sprite.gotoAndPlay(0);
@@ -52,9 +43,18 @@ class ICharacter extends _1.default {
             // this.change(lastSpriteKey);
             throw e;
         }
-    }
+    },
     isDoing() {
-        return this.doing;
-    }
-}
-exports.default = ICharacter;
+        return this._doing;
+    },
+});
+exports.ICharacterMaker = {
+    from(name, iSpriteMap, photoMap) {
+        const iCharacter = _1.IObjectMaker.from(name, iSpriteMap);
+        Object.setPrototypeOf(iCharacter, exports.ICharacterPrototype);
+        iCharacter._photo = new pixi_js_1.Sprite();
+        iCharacter._photoMap = photoMap || DEFAULT_PHOTO_INFO;
+        iCharacter._doing = false;
+        return iCharacter;
+    },
+};

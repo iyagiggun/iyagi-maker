@@ -1,4 +1,4 @@
-import IObject from '../IObject';
+import { IObject } from '../IObject';
 import { Coords, isIntersecting } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 

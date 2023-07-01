@@ -1,6 +1,7 @@
 import {
   AnimatedSprite,
   Container,
+  Sprite,
 } from 'pixi.js';
 
 import { FRAMES_PER_SECOND } from '../Constant';
@@ -20,89 +21,90 @@ export type ISpriteMap = {
 const Z_INDEX_MOD = 10000;
 const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 
-export default class IObject extends Container {
-  protected loaded = false;
+export type IObject = Container & {
+  _loaded: boolean;
+  _iSprite: ISprite;
+  _iSpriteMap: ISpriteMap;
+  _dir: Direction;
+  _iZIndex: number;
+  load(): Promise<void>
+  isLoaded(): boolean;
+  getSprite(): Sprite;
+  getCollisionMod(): Coords;
+  getCollisionArea(): Coords;
+  getWidth(): number;
+  getHeight(): number;
+  getZIndex(): number;
+  setZIndex(zIndex: number): IObject;
+  getPos(): Pos;
+  setPos(pos: Pos): IObject;
+  getDirection(): Direction;
+  setDirection(dir: Direction): IObject;
+  play(acc?: number, playPosition?: number): IObject;
+  stop(): IObject;
+  getCenterPos(): Pos;
+  change(key: string): IObject;
+  emit(key:string, data:any):IObject;
+  reaction(): Promise<void>
+};
 
-  private iSprite: ISprite;
-
-  private dir: Direction = 'down';
-
-  private iZIndex = 1;
-
-  public reaction?: () => Promise<void>;
-
-  constructor(name: string, private iSpriteMap: ISpriteMap) {
-    super();
-    this.name = name;
-    this.iSprite = this.iSpriteMap.default;
-  }
-
-  public async load() {
-    await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
-    this.loaded = true;
-  }
-
-  public isLoaded() {
-    return this.loaded;
-  }
-
-  public getSprite() {
-    const sprite = this.iSprite?.getSprite(this.dir);
+export const IObjectPrototype: IObject = Object.assign(Object.create(Container.prototype), {
+  async load() {
+    await Promise.all(Object.values(this._iSpriteMap).map((iSprite) => iSprite.load()));
+    this._iSprite = this._iSpriteMap.default;
+    this._loaded = true;
+  },
+  isLoaded() {
+    return this._loaded;
+  },
+  getSprite() {
+    const sprite = this._iSprite?.getSprite(this._dir);
     if (!sprite) {
       throw new Error('[IObject.getSprite] no iSprite');
     }
     return sprite;
-  }
-
-  public getCollisionMod() {
-    const collisionMod = this.iSprite?.getCollisionMod(this.dir);
+  },
+  getCollisionMod() {
+    const collisionMod = this._iSprite?.getCollisionMod(this._dir);
     if (!collisionMod) {
       throw new Error('[IObject.getSprite] no collision mod');
     }
     return collisionMod;
-  }
-
-  public getCollisionArea() {
+  },
+  getCollisionArea() {
     const [x, y] = this.getPos();
     const [, , colsW, colsH] = this.getCollisionMod();
     return [x, y, colsW, colsH] as Coords;
-  }
-
-  public getWidth() {
+  },
+  getWidth() {
     return this.getCollisionMod()[2];
-  }
-
-  public getHeight() {
+  },
+  getHeight() {
     return this.getCollisionMod()[3];
-  }
-
-  public getZIndex() {
-    return this.iZIndex;
-  }
-
-  public setZIndex(zIndex: number) {
+  },
+  getZIndex() {
+    return this._iZIndex;
+  },
+  setZIndex(zIndex: number) {
+    this._iZIndex = zIndex;
     this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
-  }
-
-  public getPos(): Pos {
+  },
+  getPos(): Pos {
     const [modX, modY] = this.getCollisionMod();
     return [this.x + modX, this.y + modY];
-  }
-
-  public setPos([x, y]: Pos) {
+  },
+  setPos([x, y]: Pos) {
     const [modX, modY] = this.getCollisionMod();
     this.x = x - modX;
     this.y = y - modY;
-    this.setZIndex(this.iZIndex);
+    this.setZIndex(this._iZIndex);
     return this;
-  }
-
-  public getDirection() {
-    return this.dir;
-  }
-
-  public setDirection(nextDir: Direction) {
-    const lastDir = this.dir;
+  },
+  getDirection() {
+    return this._dir;
+  },
+  setDirection(nextDir: Direction) {
+    const lastDir = this._dir;
     if (lastDir === nextDir) {
       return this;
     }
@@ -110,7 +112,7 @@ export default class IObject extends Container {
       return this;
     }
     const curSprite = this.getSprite();
-    this.dir = nextDir;
+    this._dir = nextDir;
     const nextSprite = this.getSprite();
     if (curSprite instanceof AnimatedSprite) {
       this.stop();
@@ -118,9 +120,8 @@ export default class IObject extends Container {
     this.removeChild(curSprite);
     this.addChild(nextSprite);
     return this;
-  }
-
-  public play(acc = 1, playPosition?: number) {
+  },
+  play(acc = 1, playPosition?: number) {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
       throw new Error('[IObject.play] Not an animation.');
@@ -134,9 +135,8 @@ export default class IObject extends Container {
     }
     sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
     return this;
-  }
-
-  public stop() {
+  },
+  stop() {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
       throw new Error('[IObject.stop] Not an animation.');
@@ -146,15 +146,13 @@ export default class IObject extends Container {
     }
     sprite.stop();
     return this;
-  }
-
-  public getCenterPos() {
+  },
+  getCenterPos() {
     const [x, y] = this.getPos();
     return [x + this.getWidth() / 2, y + this.getHeight() / 2];
-  }
-
-  public change(spriteKey: string) {
-    const nextSprite = this.iSpriteMap[spriteKey];
+  },
+  change(spriteKey: string) {
+    const nextSprite = this._iSpriteMap[spriteKey];
     if (!nextSprite) {
       throw new Error('[IObject.change] No the sprite.');
     }
@@ -166,11 +164,28 @@ export default class IObject extends Container {
         throw e;
       }
     }
-    this.iSprite = nextSprite;
-    this.addChild(this.iSprite.getSprite(this.dir));
+    this._iSprite = nextSprite;
+    this.addChild(this._iSprite.getSprite(this._dir));
     const lastSprite = this.getSprite();
     if (lastSprite instanceof AnimatedSprite) {
       this.stop();
     }
-  }
-}
+  },
+  emit(event: string, data: any) {
+    console.error(event, data);
+    return this;
+  },
+} as IObject);
+
+export const IObjectMaker = {
+  from(name: string, iSpriteMap: ISpriteMap) {
+    const iObject = new Container() as IObject;
+    Object.setPrototypeOf(iObject, IObjectPrototype);
+    iObject.name = name;
+    iObject._loaded = false;
+    iObject._iSpriteMap = iSpriteMap;
+    iObject._dir = 'down';
+    iObject._iZIndex = 1;
+    return iObject;
+  },
+};

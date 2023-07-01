@@ -1,4 +1,4 @@
-import IObject from '../IObject';
+import { IObject } from '../IObject';
 import { Coords } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 export declare type EventType = 'start';

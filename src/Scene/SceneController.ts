@@ -4,7 +4,7 @@ import { TRANSPARENT_1PX_IMG } from '../Constant';
 import { getAcc } from '../Utils/Coordinate';
 import SceneCamera from './SceneCamera';
 import { getTalkBox } from './TalkBox';
-import ICharacter from '../IObject/ICharacter';
+import { ICharacter } from '../IObject/ICharacter';
 
 type ControlMode = 'battle' | 'peace';
 

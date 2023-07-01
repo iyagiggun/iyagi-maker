@@ -1,5 +1,5 @@
-import IObject from '../IObject';
-import ICharacter from '../IObject/ICharacter';
+import { IObject } from '../IObject';
+import { ICharacter } from '../IObject/ICharacter';
 import IScene from '../Scene';
 export declare const getCoordinateRelationship: (self: IObject, target: IObject) => {
     distance: number;

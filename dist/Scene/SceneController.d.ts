@@ -1,5 +1,5 @@
 import SceneCamera from './SceneCamera';
-import ICharacter from '../IObject/ICharacter';
+import { ICharacter } from '../IObject/ICharacter';
 declare type ControlMode = 'battle' | 'peace';
 export default class SceneController extends SceneCamera {
     private controlMode;

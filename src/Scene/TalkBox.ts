@@ -1,7 +1,7 @@
 import {
   Graphics, Sprite, Text, TextStyle,
 } from 'pixi.js';
-import ICharacter from '../IObject/ICharacter';
+import { ICharacter } from '../IObject/ICharacter';
 
 const STYLE_NAME = new TextStyle({
   fontSize: 24,

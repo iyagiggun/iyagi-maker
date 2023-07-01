@@ -1,4 +1,4 @@
-import IObject from '../IObject';
+import { IObject } from '../IObject';
 import SceneObjectManager from './SceneObjectManager';
 
 export default class SceneCamera extends SceneObjectManager {
