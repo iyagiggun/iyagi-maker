@@ -16,6 +16,7 @@ export default class ISprite {
     private areaInfoMap;
     private loop;
     private loaded;
+    private collisionModMap;
     private spriteMap;
     constructor(imgUrl: string, areaInfoMap: AreaInfoMap, loop?: boolean);
     load(): Promise<void>;

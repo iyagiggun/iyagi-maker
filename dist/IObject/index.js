@@ -20,22 +20,21 @@ class IObject extends pixi_js_1.Container {
     }
     async load() {
         await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
+        this.addChild(this.getSprite());
         this.loaded = true;
     }
     isLoaded() {
         return this.loaded;
     }
     getSprite() {
-        var _a;
-        const sprite = (_a = this.iSprite) === null || _a === void 0 ? void 0 : _a.getSprite(this.dir);
+        const sprite = this.iSprite.getSprite(this.dir);
         if (!sprite) {
             throw new Error('[IObject.getSprite] no iSprite');
         }
         return sprite;
     }
     getCollisionMod() {
-        var _a;
-        const collisionMod = (_a = this.iSprite) === null || _a === void 0 ? void 0 : _a.getCollisionMod(this.dir);
+        const collisionMod = this.iSprite.getCollisionMod(this.dir);
         if (!collisionMod) {
             throw new Error('[IObject.getSprite] no collision mod');
         }

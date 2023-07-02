@@ -9,11 +9,22 @@ class SceneObjectManager extends SceneBase {
 
   constructor(name: string, objectList: IObject[]) {
     super(name);
-    this.objectList = objectList;
+    this.objectList = [...objectList];
   }
 
   public load() {
     return Promise.all(this.objectList.map((obj) => obj.load()));
+  }
+
+  public draw() {
+    const drawnList = this.container.children;
+    this.objectList
+      .filter((obj) => !drawnList.includes(obj))
+      .forEach((obj) => {
+        console.error('draw', obj.name, obj.getPos());
+        this.container.addChild(obj);
+        console.error('draw', obj.name, obj.getPos());
+      });
   }
 
   public addObject(obj: IObject) {
@@ -24,7 +35,6 @@ class SceneObjectManager extends SceneBase {
       throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
     }
     this.objectList.push(obj);
-    this.container.addChild(obj);
   }
 
   public removeObject(obj: IObject) {
@@ -32,7 +42,6 @@ class SceneObjectManager extends SceneBase {
       throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-    this.container.removeChild(obj);
   }
 
   protected getObjectNextX(target: IObject, dist: number) {

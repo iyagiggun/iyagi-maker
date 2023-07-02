@@ -27,7 +27,7 @@ class Iyagi {
       this.currentScene.detach();
     }
     scene.attachAt(this.app);
-    scene.drawMap();
+    scene.draw();
     scene.dispatchEvent(new CustomEvent('start'));
   }
 }

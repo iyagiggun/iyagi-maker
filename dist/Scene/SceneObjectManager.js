@@ -8,10 +8,20 @@ const SceneBase_1 = __importDefault(require("./SceneBase"));
 class SceneObjectManager extends SceneBase_1.default {
     constructor(name, objectList) {
         super(name);
-        this.objectList = objectList;
+        this.objectList = [...objectList];
     }
     load() {
         return Promise.all(this.objectList.map((obj) => obj.load()));
+    }
+    draw() {
+        const drawnList = this.container.children;
+        this.objectList
+            .filter((obj) => !drawnList.includes(obj))
+            .forEach((obj) => {
+            console.error('draw', obj.name, obj.getPos());
+            this.container.addChild(obj);
+            console.error('draw', obj.name, obj.getPos());
+        });
     }
     addObject(obj) {
         if (!obj.isLoaded()) {
@@ -21,14 +31,12 @@ class SceneObjectManager extends SceneBase_1.default {
             throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
         }
         this.objectList.push(obj);
-        this.container.addChild(obj);
     }
     removeObject(obj) {
         if (!this.objectList.includes(obj)) {
             throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
         }
         this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-        this.container.removeChild(obj);
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();

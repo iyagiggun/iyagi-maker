@@ -9,14 +9,5 @@ class IScene extends SceneController_1.default {
         super(...arguments);
         this.status = 'idle';
     }
-    drawMap() {
-        // add object
-        this.objectList.forEach((obj) => {
-            this.container.addChild(obj);
-        });
-    }
-    addChild(child) {
-        this.container.addChild(child);
-    }
 }
 exports.default = IScene;

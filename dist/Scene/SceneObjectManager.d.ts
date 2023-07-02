@@ -6,6 +6,7 @@ declare class SceneObjectManager extends SceneBase {
     protected objectList: IObject[];
     constructor(name: string, objectList: IObject[]);
     load(): Promise<void[]>;
+    draw(): void;
     addObject(obj: IObject): void;
     removeObject(obj: IObject): void;
     protected getObjectNextX(target: IObject, dist: number): number;

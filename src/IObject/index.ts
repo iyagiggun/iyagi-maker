@@ -6,7 +6,9 @@ import {
 import { FRAMES_PER_SECOND } from '../Constant';
 import { Coords } from '../Utils/Coordinate';
 import ISprite from './ISprite';
-import { Direction, Pos } from './type';
+import { Direction } from './type';
+
+export type IPos = [x: number, y: number];
 
 export type ISpriteMap = {
   default: ISprite;
@@ -39,6 +41,7 @@ export default class IObject extends Container {
 
   public async load() {
     await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
+    this.addChild(this.getSprite());
     this.loaded = true;
   }
 
@@ -47,7 +50,7 @@ export default class IObject extends Container {
   }
 
   public getSprite() {
-    const sprite = this.iSprite?.getSprite(this.dir);
+    const sprite = this.iSprite.getSprite(this.dir);
     if (!sprite) {
       throw new Error('[IObject.getSprite] no iSprite');
     }
@@ -55,7 +58,7 @@ export default class IObject extends Container {
   }
 
   public getCollisionMod() {
-    const collisionMod = this.iSprite?.getCollisionMod(this.dir);
+    const collisionMod = this.iSprite.getCollisionMod(this.dir);
     if (!collisionMod) {
       throw new Error('[IObject.getSprite] no collision mod');
     }
@@ -84,12 +87,12 @@ export default class IObject extends Container {
     this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
   }
 
-  public getPos(): Pos {
+  public getPos(): IPos {
     const [modX, modY] = this.getCollisionMod();
     return [this.x + modX, this.y + modY];
   }
 
-  public setPos([x, y]: Pos) {
+  public setPos([x, y]: IPos) {
     const [modX, modY] = this.getCollisionMod();
     this.x = x - modX;
     this.y = y - modY;
@@ -173,4 +176,9 @@ export default class IObject extends Container {
       this.stop();
     }
   }
+
+  // public emit(event: string) {
+  //   console.error(this, event);
+  //   this.emit('fuck');
+  // }
 }
