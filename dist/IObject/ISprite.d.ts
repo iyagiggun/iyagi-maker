@@ -11,15 +11,24 @@ declare type AreaInfoMap = {
     left?: AreaInfo;
     right?: AreaInfo;
 };
-export default class ISprite {
-    private imgUrl;
-    private areaInfoMap;
-    private loop;
-    private loaded;
-    private spriteMap;
-    constructor(imgUrl: string, areaInfoMap: AreaInfoMap, loop?: boolean);
+export declare type ISprite = {
+    _imgUrl: string;
+    _loaded: boolean;
+    _areaInfoMap: AreaInfoMap;
+    _loop: boolean;
+    _spriteMap: {
+        [key: string]: Sprite | undefined;
+    };
+    _collisionModMap: {
+        [key: string]: Coords;
+    };
+    init(): void;
     load(): Promise<void>;
     getSprite(dir: Direction): Sprite;
     getCollisionMod(dir: Direction): Coords;
-}
+};
+export declare const ISpritePrototype: ISprite;
+export declare const ISpriteMaker: {
+    from(imgUrl: string, areaInfoMap: AreaInfoMap, loop?: boolean): any;
+};
 export {};

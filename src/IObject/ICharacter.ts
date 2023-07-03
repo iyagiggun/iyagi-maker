@@ -46,7 +46,10 @@ export const ICharacterPrototype = Object.assign(Object.create(IObjectPrototype)
       return;
     }
     this._doing = true;
-    // const lastSpriteKey = this.getCurISpriteKey();
+    const lastSpriteKey = Object.keys(this._iSpriteMap).find((key) => this._iSpriteMap[key] === this._iSprite);
+    if (!lastSpriteKey) {
+      throw new Error('[ICharacter.do] Fail to get last sprite key');
+    }
     try {
       this.change(actionISpriteKey);
       const sprite = this.getSprite();
@@ -54,16 +57,15 @@ export const ICharacterPrototype = Object.assign(Object.create(IObjectPrototype)
         throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionISpriteKey}`);
       }
       const onComplete = () => {
-        // this.change(lastSpriteKey);
+        this.change(lastSpriteKey);
         this._doing = false;
         sprite.onComplete = undefined;
       };
       sprite.gotoAndPlay(0);
       sprite.onComplete = onComplete;
-      // this.play();
+      this.play();
     } catch (e) {
-      console.error(11);
-      // this.change(lastSpriteKey);
+      this.change(lastSpriteKey);
       throw e;
     }
   },

@@ -6,8 +6,10 @@ import {
 
 import { FRAMES_PER_SECOND } from '../Constant';
 import { Coords } from '../Utils/Coordinate';
-import ISprite from './ISprite';
-import { Direction, Pos } from './type';
+import { ISprite } from './ISprite';
+import { Direction } from './type';
+
+export type IPos = [x: number, y:number];
 
 export type ISpriteMap = {
   default: ISprite;
@@ -36,45 +38,40 @@ export type IObject = Container & {
   getHeight(): number;
   getZIndex(): number;
   setZIndex(zIndex: number): IObject;
-  getPos(): Pos;
-  setPos(pos: Pos): IObject;
+  getPos(): IPos;
+  setPos(pos: IPos): IObject;
   getDirection(): Direction;
   setDirection(dir: Direction): IObject;
   play(acc?: number, playPosition?: number): IObject;
   stop(): IObject;
-  getCenterPos(): Pos;
+  getCenterPos(): IPos;
   change(key: string): IObject;
-  emit(key:string, data:any):IObject;
   reaction(): Promise<void>
 };
 
 export const IObjectPrototype: IObject = Object.assign(Object.create(Container.prototype), {
   async load() {
     await Promise.all(Object.values(this._iSpriteMap).map((iSprite) => iSprite.load()));
-    this._iSprite = this._iSpriteMap.default;
+    this.addChild(this._iSprite.getSprite(this._dir));
     this._loaded = true;
   },
   isLoaded() {
     return this._loaded;
   },
   getSprite() {
-    const sprite = this._iSprite?.getSprite(this._dir);
+    const sprite = this._iSprite.getSprite(this._dir);
     if (!sprite) {
       throw new Error('[IObject.getSprite] no iSprite');
     }
     return sprite;
   },
   getCollisionMod() {
-    const collisionMod = this._iSprite?.getCollisionMod(this._dir);
-    if (!collisionMod) {
-      throw new Error('[IObject.getSprite] no collision mod');
-    }
-    return collisionMod;
+    return this._iSprite.getCollisionMod(this._dir);
   },
   getCollisionArea() {
     const [x, y] = this.getPos();
     const [, , colsW, colsH] = this.getCollisionMod();
-    return [x, y, colsW, colsH] as Coords;
+    return [x, y, colsW, colsH];
   },
   getWidth() {
     return this.getCollisionMod()[2];
@@ -87,13 +84,15 @@ export const IObjectPrototype: IObject = Object.assign(Object.create(Container.p
   },
   setZIndex(zIndex: number) {
     this._iZIndex = zIndex;
-    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
+    const [, y] = this.getPos();
+    this.zIndex = zIndex * Z_INDEX_MOD + y;
+    return this;
   },
-  getPos(): Pos {
+  getPos(): IPos {
     const [modX, modY] = this.getCollisionMod();
     return [this.x + modX, this.y + modY];
   },
-  setPos([x, y]: Pos) {
+  setPos([x, y]: IPos) {
     const [modX, modY] = this.getCollisionMod();
     this.x = x - modX;
     this.y = y - modY;
@@ -109,6 +108,7 @@ export const IObjectPrototype: IObject = Object.assign(Object.create(Container.p
       return this;
     }
     if (!this.isLoaded()) {
+      this._dir = nextDir;
       return this;
     }
     const curSprite = this.getSprite();
@@ -139,7 +139,7 @@ export const IObjectPrototype: IObject = Object.assign(Object.create(Container.p
   stop() {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
-      throw new Error('[IObject.stop] Not an animation.');
+      return this;
     }
     if (!sprite.playing) {
       return this;
@@ -152,28 +152,15 @@ export const IObjectPrototype: IObject = Object.assign(Object.create(Container.p
     return [x + this.getWidth() / 2, y + this.getHeight() / 2];
   },
   change(spriteKey: string) {
-    const nextSprite = this._iSpriteMap[spriteKey];
-    if (!nextSprite) {
+    const nextISprite = this._iSpriteMap[spriteKey];
+    if (!nextISprite) {
       throw new Error('[IObject.change] No the sprite.');
     }
-    try {
-      this.removeChild(this.getSprite());
-      this.stop();
-    } catch (e) {
-      if (!`${e}`.includes('[Object.')) {
-        throw e;
-      }
-    }
-    this._iSprite = nextSprite;
-    this.addChild(this._iSprite.getSprite(this._dir));
-    const lastSprite = this.getSprite();
-    if (lastSprite instanceof AnimatedSprite) {
-      this.stop();
-    }
-  },
-  emit(event: string, data: any) {
-    console.error(event, data);
-    return this;
+    this.stop();
+    this.removeChild(this.getSprite());
+
+    this._iSprite = nextISprite;
+    this.addChild(this.getSprite());
   },
 } as IObject);
 
@@ -184,6 +171,7 @@ export const IObjectMaker = {
     iObject.name = name;
     iObject._loaded = false;
     iObject._iSpriteMap = iSpriteMap;
+    iObject._iSprite = iSpriteMap.default;
     iObject._dir = 'down';
     iObject._iZIndex = 1;
     return iObject;

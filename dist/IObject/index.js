@@ -12,27 +12,21 @@ const DEFAULT_ANIMATION_SPEED = 6 / Constant_1.FRAMES_PER_SECOND; // 10 fps
 exports.IObjectPrototype = Object.assign(Object.create(pixi_js_1.Container.prototype), {
     async load() {
         await Promise.all(Object.values(this._iSpriteMap).map((iSprite) => iSprite.load()));
-        this._iSprite = this._iSpriteMap.default;
+        this.addChild(this._iSprite.getSprite(this._dir));
         this._loaded = true;
     },
     isLoaded() {
         return this._loaded;
     },
     getSprite() {
-        var _a;
-        const sprite = (_a = this._iSprite) === null || _a === void 0 ? void 0 : _a.getSprite(this._dir);
+        const sprite = this._iSprite.getSprite(this._dir);
         if (!sprite) {
             throw new Error('[IObject.getSprite] no iSprite');
         }
         return sprite;
     },
     getCollisionMod() {
-        var _a;
-        const collisionMod = (_a = this._iSprite) === null || _a === void 0 ? void 0 : _a.getCollisionMod(this._dir);
-        if (!collisionMod) {
-            throw new Error('[IObject.getSprite] no collision mod');
-        }
-        return collisionMod;
+        return this._iSprite.getCollisionMod(this._dir);
     },
     getCollisionArea() {
         const [x, y] = this.getPos();
@@ -50,7 +44,9 @@ exports.IObjectPrototype = Object.assign(Object.create(pixi_js_1.Container.proto
     },
     setZIndex(zIndex) {
         this._iZIndex = zIndex;
-        this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
+        const [, y] = this.getPos();
+        this.zIndex = zIndex * Z_INDEX_MOD + y;
+        return this;
     },
     getPos() {
         const [modX, modY] = this.getCollisionMod();
@@ -72,6 +68,7 @@ exports.IObjectPrototype = Object.assign(Object.create(pixi_js_1.Container.proto
             return this;
         }
         if (!this.isLoaded()) {
+            this._dir = nextDir;
             return this;
         }
         const curSprite = this.getSprite();
@@ -103,7 +100,7 @@ exports.IObjectPrototype = Object.assign(Object.create(pixi_js_1.Container.proto
     stop() {
         const sprite = this.getSprite();
         if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
-            throw new Error('[IObject.stop] Not an animation.');
+            return this;
         }
         if (!sprite.playing) {
             return this;
@@ -116,29 +113,14 @@ exports.IObjectPrototype = Object.assign(Object.create(pixi_js_1.Container.proto
         return [x + this.getWidth() / 2, y + this.getHeight() / 2];
     },
     change(spriteKey) {
-        const nextSprite = this._iSpriteMap[spriteKey];
-        if (!nextSprite) {
+        const nextISprite = this._iSpriteMap[spriteKey];
+        if (!nextISprite) {
             throw new Error('[IObject.change] No the sprite.');
         }
-        try {
-            this.removeChild(this.getSprite());
-            this.stop();
-        }
-        catch (e) {
-            if (!`${e}`.includes('[Object.')) {
-                throw e;
-            }
-        }
-        this._iSprite = nextSprite;
-        this.addChild(this._iSprite.getSprite(this._dir));
-        const lastSprite = this.getSprite();
-        if (lastSprite instanceof pixi_js_1.AnimatedSprite) {
-            this.stop();
-        }
-    },
-    emit(event, data) {
-        console.error(event, data);
-        return this;
+        this.stop();
+        this.removeChild(this.getSprite());
+        this._iSprite = nextISprite;
+        this.addChild(this.getSprite());
     },
 });
 exports.IObjectMaker = {
@@ -148,6 +130,7 @@ exports.IObjectMaker = {
         iObject.name = name;
         iObject._loaded = false;
         iObject._iSpriteMap = iSpriteMap;
+        iObject._iSprite = iSpriteMap.default;
         iObject._dir = 'down';
         iObject._iZIndex = 1;
         return iObject;

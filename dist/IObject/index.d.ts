@@ -1,7 +1,8 @@
 import { Container, Sprite } from 'pixi.js';
 import { Coords } from '../Utils/Coordinate';
-import ISprite from './ISprite';
-import { Direction, Pos } from './type';
+import { ISprite } from './ISprite';
+import { Direction } from './type';
+export declare type IPos = [x: number, y: number];
 export declare type ISpriteMap = {
     default: ISprite;
     [key: string]: ISprite;
@@ -21,15 +22,14 @@ export declare type IObject = Container & {
     getHeight(): number;
     getZIndex(): number;
     setZIndex(zIndex: number): IObject;
-    getPos(): Pos;
-    setPos(pos: Pos): IObject;
+    getPos(): IPos;
+    setPos(pos: IPos): IObject;
     getDirection(): Direction;
     setDirection(dir: Direction): IObject;
     play(acc?: number, playPosition?: number): IObject;
     stop(): IObject;
-    getCenterPos(): Pos;
+    getCenterPos(): IPos;
     change(key: string): IObject;
-    emit(key: string, data: any): IObject;
     reaction(): Promise<void>;
 };
 export declare const IObjectPrototype: IObject;

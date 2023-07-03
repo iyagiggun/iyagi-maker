@@ -43,6 +43,8 @@ const getSprite = (
   return undefined;
 };
 
+let spriteNamePrefix = 1;
+
 type AreaInfo = {
   coordsList: Coords[];
   collisionMod?: Coords;
@@ -55,90 +57,86 @@ type AreaInfoMap = {
   right?: AreaInfo;
 };
 
-export default class ISprite {
-  private loaded = false;
-
-  private spriteMap: {
-    [key:string]: Sprite | undefined;
-  } = {};
-
-  constructor(private imgUrl: string, private areaInfoMap: AreaInfoMap, private loop = true) {
-
+export type ISprite = {
+  _imgUrl: string;
+  _loaded: boolean;
+  _areaInfoMap: AreaInfoMap;
+  _loop: boolean;
+  _spriteMap: {
+    [key: string]: Sprite | undefined;
+  };
+  _collisionModMap: {
+    [key: string]: Coords;
   }
+  init(): void;
+  load(): Promise<void>
+  getSprite(dir: Direction): Sprite;
+  getCollisionMod(dir: Direction): Coords;
+};
 
-  public async load() {
-    if (this.loaded) {
+export const ISpritePrototype = {
+  async load() {
+    if (this._loaded) {
       return;
     }
-    const loadList = Object.keys(this.areaInfoMap).map(async (key) => {
-      switch (key) {
-        case 'up':
-        case 'down':
-        case 'left':
-        case 'right': {
-          const frames = coordsListToFrame(
-            `${this.imgUrl}:${key}`,
-            this.areaInfoMap[key]?.coordsList,
-          );
-          await new Spritesheet(getTexture(this.imgUrl || ''), {
-            frames: {
-              ...frames,
-            },
-            meta: {
-              scale: '1',
-            },
-          }).parse();
-          this.spriteMap[key] = getSprite(Object.keys(frames), this.loop);
-        }
-          break;
-        default:
-          throw new Error('[ISprite.load] Invalid key.');
-      }
-    });
-    await Promise.all(loadList);
-    this.loaded = true;
-  }
+    const framesMap = Object.keys(this._areaInfoMap).reduce<{ [key:string]: object }>((acc, dir) => ({
+      ...acc,
+      [dir]: coordsListToFrame(
+        // eslint-disable-next-line no-plusplus
+        `${spriteNamePrefix++}:${this._imgUrl}:${dir}`,
+        this._areaInfoMap[dir as unknown as Direction]?.coordsList,
+      ),
+    }), {});
 
-  public getSprite(dir: Direction) {
-    if (!this.loaded) {
-      throw new Error('[ISprite.getSprite] Not loaded.');
-    }
-    let sprite: Sprite | undefined;
-    switch (dir) {
-      case 'up':
-      case 'down':
-      case 'left':
-      case 'right':
-        sprite = this.spriteMap[dir];
-        break;
-      default:
-        throw new Error('[ISprite.getSprite] Invalid dir.');
-    }
+    await new Spritesheet(getTexture(this._imgUrl), {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      frames: Object.values(framesMap).reduce((acc, each) => ({ ...acc, ...each }), {}) as { [key: string]: any },
+      meta: {
+        scale: '1',
+      },
+    }).parse();
+
+    this._spriteMap = Object.keys(framesMap).reduce((acc, dir) => ({
+      ...acc,
+      [dir]: getSprite(Object.keys(framesMap[dir]), this._loop),
+    }), {});
+
+    this._loaded = true;
+  },
+
+  getSprite(dir: Direction) {
+    const sprite = this._spriteMap[dir];
     if (!sprite) {
-      throw new Error('[ISprite.getSprite] No sprite.');
+      throw new Error('[ISprite.getSprite] No the sprite.');
     }
     return sprite;
-  }
+  },
 
-  public getCollisionMod(dir: Direction): Coords {
-    if (!this.loaded) {
-      throw new Error('[ISprite.getCollisionMod] Not loaded.');
-    }
-    let collisionMod: Coords | undefined;
-    switch (dir) {
-      case 'up':
-      case 'down':
-      case 'left':
-      case 'right':
-        collisionMod = this.areaInfoMap[dir]?.collisionMod;
-        break;
-      default:
-        throw new Error('[ISprite.getCollisionMod] Invalid dir.');
-    }
-    if (!collisionMod) {
-      const sprite = this.getSprite(dir);
-      return [0, 0, sprite.width, sprite.height];
-    }
-    return collisionMod;
-  }
-}
+  getCollisionMod(dir: Direction): Coords {
+    return this._collisionModMap[dir];
+  },
+} as ISprite;
+
+export const ISpriteMaker = {
+  from(imgUrl: string, areaInfoMap: AreaInfoMap, loop = true) {
+    const iSprite = Object.create(ISpritePrototype);
+    iSprite._imgUrl = imgUrl;
+    iSprite._areaInfoMap = areaInfoMap;
+    iSprite._loop = loop;
+    iSprite._collisionModMap = Object.keys(areaInfoMap).reduce<{ [key:string]: Coords }>(
+      (acc, _dir) => {
+        const dir = _dir as unknown as Direction;
+        const areaInfo = areaInfoMap[dir]?.coordsList[0];
+        if (!areaInfo) {
+          return acc;
+        }
+        return {
+          ...acc,
+          [dir]: areaInfoMap[dir]?.collisionMod || [0, 0, areaInfo[2], areaInfo[3]],
+        };
+      },
+      {},
+    );
+    return iSprite;
+  },
+};
