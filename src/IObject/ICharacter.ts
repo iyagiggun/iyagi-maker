@@ -61,9 +61,9 @@ export default class ICharacter extends IObject {
         this.doing = false;
         sprite.onComplete = undefined;
       };
+      sprite.loop = false;
       sprite.gotoAndPlay(0);
       sprite.onComplete = onComplete;
-      // this.play();
     } catch (e) {
       console.error(11);
       this.change(lastSpriteKey);

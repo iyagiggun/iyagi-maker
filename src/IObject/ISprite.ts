@@ -32,14 +32,15 @@ const coordsListToFrame = (prefix: string, coordsList?: Coords[]) => {
 
 const getSprite = (
   frameKeyList: string[],
-  loop = true,
+  options?: ISpriteOptions,
 ) => {
   if (frameKeyList.length === 1) {
     return Sprite.from(frameKeyList[0]);
   }
   if (frameKeyList.length > 1) {
     const aSprite = new AnimatedSprite(frameKeyList.map((key) => Texture.from(key)));
-    aSprite.loop = loop;
+    aSprite.loop = true;
+    aSprite.onFrameChange = options?.onFrameChange;
     return aSprite;
   }
   return undefined;
@@ -57,6 +58,10 @@ type AreaInfoMap = {
   right?: AreaInfo;
 };
 
+type ISpriteOptions = {
+  onFrameChange?: (frameIdx: number) => void;
+};
+
 export default class ISprite {
   private loaded = false;
 
@@ -68,7 +73,7 @@ export default class ISprite {
     [key:string]: Sprite | undefined;
   } = {};
 
-  constructor(private imgUrl: string, private areaInfoMap: AreaInfoMap, private loop = true) {
+  constructor(private imgUrl: string, private areaInfoMap: AreaInfoMap, private options?: ISpriteOptions) {
     this.collisionModMap = Object.keys(areaInfoMap).reduce<{ [key:string]: Coords }>(
       (acc, _dir) => {
         const dir = _dir as unknown as Direction;
@@ -109,7 +114,7 @@ export default class ISprite {
 
     this.spriteMap = Object.keys(framesMap).reduce((acc, dir) => ({
       ...acc,
-      [dir]: getSprite(Object.keys(framesMap[dir]), this.loop),
+      [dir]: getSprite(Object.keys(framesMap[dir]), this.options),
     }), {});
 
     this.loaded = true;

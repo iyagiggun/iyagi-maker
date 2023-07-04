@@ -46,9 +46,9 @@ class ICharacter extends _1.default {
                 this.doing = false;
                 sprite.onComplete = undefined;
             };
+            sprite.loop = false;
             sprite.gotoAndPlay(0);
             sprite.onComplete = onComplete;
-            // this.play();
         }
         catch (e) {
             console.error(11);

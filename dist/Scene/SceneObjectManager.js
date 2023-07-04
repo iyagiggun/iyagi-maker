@@ -29,6 +29,7 @@ class SceneObjectManager extends SceneBase_1.default {
             throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
         }
         this.objectList.push(obj);
+        this.container.addChild(obj);
     }
     removeObject(obj) {
         if (!this.objectList.includes(obj)) {

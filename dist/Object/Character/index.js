@@ -14,7 +14,7 @@ class ICharacter extends __1.default {
     }
     setStatus(status) {
         this.status = status;
-        this.dispatchEvent(new CustomEvent('statusChange'));
+        // this.dispatchEvent(new CustomEvent('statusChange'));
         return this;
     }
 }

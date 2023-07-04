@@ -24,22 +24,23 @@ const coordsListToFrame = (prefix, coordsList) => {
         },
     }), {});
 };
-const getSprite = (frameKeyList, loop = true) => {
+const getSprite = (frameKeyList, options) => {
     if (frameKeyList.length === 1) {
         return pixi_js_1.Sprite.from(frameKeyList[0]);
     }
     if (frameKeyList.length > 1) {
         const aSprite = new pixi_js_1.AnimatedSprite(frameKeyList.map((key) => pixi_js_1.Texture.from(key)));
-        aSprite.loop = loop;
+        aSprite.loop = true;
+        aSprite.onFrameChange = options === null || options === void 0 ? void 0 : options.onFrameChange;
         return aSprite;
     }
     return undefined;
 };
 class ISprite {
-    constructor(imgUrl, areaInfoMap, loop = true) {
+    constructor(imgUrl, areaInfoMap, options) {
         this.imgUrl = imgUrl;
         this.areaInfoMap = areaInfoMap;
-        this.loop = loop;
+        this.options = options;
         this.loaded = false;
         this.spriteMap = {};
         this.collisionModMap = Object.keys(areaInfoMap).reduce((acc, _dir) => {
@@ -77,7 +78,7 @@ class ISprite {
         }).parse();
         this.spriteMap = Object.keys(framesMap).reduce((acc, dir) => ({
             ...acc,
-            [dir]: getSprite(Object.keys(framesMap[dir]), this.loop),
+            [dir]: getSprite(Object.keys(framesMap[dir]), this.options),
         }), {});
         this.loaded = true;
     }

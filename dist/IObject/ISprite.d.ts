@@ -11,14 +11,17 @@ declare type AreaInfoMap = {
     left?: AreaInfo;
     right?: AreaInfo;
 };
+declare type ISpriteOptions = {
+    onFrameChange?: (frameIdx: number) => void;
+};
 export default class ISprite {
     private imgUrl;
     private areaInfoMap;
-    private loop;
+    private options?;
     private loaded;
     private collisionModMap;
     private spriteMap;
-    constructor(imgUrl: string, areaInfoMap: AreaInfoMap, loop?: boolean);
+    constructor(imgUrl: string, areaInfoMap: AreaInfoMap, options?: ISpriteOptions | undefined);
     load(): Promise<void>;
     getSprite(dir: Direction): Sprite;
     getCollisionMod(dir: Direction): Coords;
