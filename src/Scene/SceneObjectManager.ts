@@ -40,7 +40,7 @@ class SceneObjectManager extends SceneBase {
       throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-    this.container.removeChild(obj.getSprite());
+    this.container.removeChild(obj);
   }
 
   protected getObjectNextX(target: IObject, dist: number) {
