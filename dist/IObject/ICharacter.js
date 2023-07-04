@@ -31,7 +31,10 @@ class ICharacter extends _1.default {
             return;
         }
         this.doing = true;
-        // const lastSpriteKey = this.getCurISpriteKey();
+        const lastSpriteKey = Object.keys(this.iSpriteMap).find((key) => this.iSprite === this.iSpriteMap[key]);
+        if (!lastSpriteKey) {
+            throw new Error('ICharacter.do] Fail to find last sprite key.');
+        }
         try {
             this.change(actionSpriteKey);
             const sprite = this.getSprite();
@@ -39,7 +42,7 @@ class ICharacter extends _1.default {
                 throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
             }
             const onComplete = () => {
-                // this.change(lastSpriteKey);
+                this.change(lastSpriteKey);
                 this.doing = false;
                 sprite.onComplete = undefined;
             };
@@ -49,7 +52,7 @@ class ICharacter extends _1.default {
         }
         catch (e) {
             console.error(11);
-            // this.change(lastSpriteKey);
+            this.change(lastSpriteKey);
             throw e;
         }
     }

@@ -55,7 +55,10 @@ class IObject extends pixi_js_1.Container {
         return this.iZIndex;
     }
     setZIndex(zIndex) {
-        this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
+        this.iZIndex = zIndex;
+        const [, y] = this.getPos();
+        this.zIndex = this.iZIndex * Z_INDEX_MOD + y;
+        return this;
     }
     getPos() {
         const [modX, modY] = this.getCollisionMod();
@@ -77,6 +80,7 @@ class IObject extends pixi_js_1.Container {
             return this;
         }
         if (!this.isLoaded()) {
+            this.dir = nextDir;
             return this;
         }
         const curSprite = this.getSprite();
@@ -108,7 +112,7 @@ class IObject extends pixi_js_1.Container {
     stop() {
         const sprite = this.getSprite();
         if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
-            throw new Error('[IObject.stop] Not an animation.');
+            return this;
         }
         if (!sprite.playing) {
             return this;
@@ -125,15 +129,8 @@ class IObject extends pixi_js_1.Container {
         if (!nextSprite) {
             throw new Error('[IObject.change] No the sprite.');
         }
-        try {
-            this.removeChild(this.getSprite());
-            this.stop();
-        }
-        catch (e) {
-            if (!`${e}`.includes('[Object.')) {
-                throw e;
-            }
-        }
+        this.removeChild(this.getSprite());
+        this.stop();
         this.iSprite = nextSprite;
         this.addChild(this.iSprite.getSprite(this.dir));
         const lastSprite = this.getSprite();

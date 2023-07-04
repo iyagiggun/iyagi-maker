@@ -8,9 +8,9 @@ export declare type ISpriteMap = {
     [key: string]: ISprite;
 };
 export default class IObject extends Container {
-    private iSpriteMap;
+    protected iSpriteMap: ISpriteMap;
     protected loaded: boolean;
-    private iSprite;
+    protected iSprite: ISprite;
     private dir;
     private iZIndex;
     reaction?: () => Promise<void>;
@@ -23,7 +23,7 @@ export default class IObject extends Container {
     getWidth(): number;
     getHeight(): number;
     getZIndex(): number;
-    setZIndex(zIndex: number): void;
+    setZIndex(zIndex: number): this;
     getPos(): IPos;
     setPos([x, y]: IPos): this;
     getDirection(): Direction;
