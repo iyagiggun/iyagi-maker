@@ -21,9 +21,7 @@ class SceneObjectManager extends SceneBase {
     this.objectList
       .filter((obj) => !drawnList.includes(obj))
       .forEach((obj) => {
-        console.error('draw', obj.name, obj.getPos());
         this.container.addChild(obj);
-        console.error('draw', obj.name, obj.getPos());
       });
   }
 
@@ -42,6 +40,7 @@ class SceneObjectManager extends SceneBase {
       throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
+    this.container.removeChild(obj.getSprite());
   }
 
   protected getObjectNextX(target: IObject, dist: number) {

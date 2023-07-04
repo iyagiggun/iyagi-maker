@@ -25,7 +25,7 @@ const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 export default class IObject extends Container {
   protected loaded = false;
 
-  private iSprite: ISprite;
+  protected iSprite: ISprite;
 
   private dir: Direction = 'down';
 
@@ -33,7 +33,7 @@ export default class IObject extends Container {
 
   public reaction?: () => Promise<void>;
 
-  constructor(name: string, private iSpriteMap: ISpriteMap) {
+  constructor(name: string, protected iSpriteMap: ISpriteMap) {
     super();
     this.name = name;
     this.iSprite = this.iSpriteMap.default;
@@ -84,7 +84,10 @@ export default class IObject extends Container {
   }
 
   public setZIndex(zIndex: number) {
-    this.zIndex = zIndex * Z_INDEX_MOD + this.y + this.height;
+    this.iZIndex = zIndex;
+    const [, y] = this.getPos();
+    this.zIndex = this.iZIndex * Z_INDEX_MOD + y;
+    return this;
   }
 
   public getPos(): IPos {
@@ -110,6 +113,7 @@ export default class IObject extends Container {
       return this;
     }
     if (!this.isLoaded()) {
+      this.dir = nextDir;
       return this;
     }
     const curSprite = this.getSprite();
@@ -142,7 +146,7 @@ export default class IObject extends Container {
   public stop() {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
-      throw new Error('[IObject.stop] Not an animation.');
+      return this;
     }
     if (!sprite.playing) {
       return this;
@@ -161,14 +165,9 @@ export default class IObject extends Container {
     if (!nextSprite) {
       throw new Error('[IObject.change] No the sprite.');
     }
-    try {
-      this.removeChild(this.getSprite());
-      this.stop();
-    } catch (e) {
-      if (!`${e}`.includes('[Object.')) {
-        throw e;
-      }
-    }
+    this.removeChild(this.getSprite());
+    this.stop();
+
     this.iSprite = nextSprite;
     this.addChild(this.iSprite.getSprite(this.dir));
     const lastSprite = this.getSprite();
@@ -176,9 +175,4 @@ export default class IObject extends Container {
       this.stop();
     }
   }
-
-  // public emit(event: string) {
-  //   console.error(this, event);
-  //   this.emit('fuck');
-  // }
 }
