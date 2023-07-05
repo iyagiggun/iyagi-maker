@@ -7,6 +7,7 @@ export declare type ISpriteMap = {
     default: ISprite;
     [key: string]: ISprite;
 };
+export declare const DEFAULT_ANIMATION_SPEED: number;
 export default class IObject extends Container {
     protected iSpriteMap: ISpriteMap;
     protected loaded: boolean;
@@ -30,10 +31,10 @@ export default class IObject extends Container {
     setDirection(nextDir: Direction): this;
     /**
      * loop animation
-     * @param acc
+     * @param speed
      * @returns
      */
-    play(acc?: number): this;
+    play(speed?: number): this;
     stop(): this;
     getCenterPos(): number[];
     change(spriteKey: string): void;

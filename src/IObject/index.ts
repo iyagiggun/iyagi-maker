@@ -20,7 +20,7 @@ export type ISpriteMap = {
  * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
  */
 const Z_INDEX_MOD = 10000;
-const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
+export const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 
 export default class IObject extends Container {
   protected loaded = false;
@@ -129,10 +129,10 @@ export default class IObject extends Container {
 
   /**
    * loop animation
-   * @param acc
+   * @param speed
    * @returns
    */
-  public play(acc = 1) {
+  public play(speed = 1) {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
       throw new Error('[IObject.play] Not an animation.');
@@ -142,7 +142,7 @@ export default class IObject extends Container {
     }
     sprite.loop = true;
     sprite.play();
-    sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
+    sprite.animationSpeed = speed * DEFAULT_ANIMATION_SPEED;
     return this;
   }
 

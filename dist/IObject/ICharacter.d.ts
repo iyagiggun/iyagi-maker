@@ -17,6 +17,6 @@ export default class ICharacter extends IObject {
      * @param actionSpriteKey
      * @returns
      */
-    do(actionSpriteKey: string): Promise<boolean>;
+    do(actionSpriteKey: string, speed?: number): Promise<boolean>;
     isDoing(): boolean;
 }

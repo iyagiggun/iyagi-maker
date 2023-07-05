@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DEFAULT_ANIMATION_SPEED = void 0;
 const pixi_js_1 = require("pixi.js");
 const Constant_1 = require("../Constant");
 /**
@@ -7,7 +8,7 @@ const Constant_1 = require("../Constant");
  * 따라서, 맵의 크기가 Z_INDEX_MOD 값보다 크면 문제가 될 수 있음
  */
 const Z_INDEX_MOD = 10000;
-const DEFAULT_ANIMATION_SPEED = 6 / Constant_1.FRAMES_PER_SECOND; // 10 fps
+exports.DEFAULT_ANIMATION_SPEED = 6 / Constant_1.FRAMES_PER_SECOND; // 10 fps
 class IObject extends pixi_js_1.Container {
     constructor(name, iSpriteMap) {
         super();
@@ -95,10 +96,10 @@ class IObject extends pixi_js_1.Container {
     }
     /**
      * loop animation
-     * @param acc
+     * @param speed
      * @returns
      */
-    play(acc = 1) {
+    play(speed = 1) {
         const sprite = this.getSprite();
         if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
             throw new Error('[IObject.play] Not an animation.');
@@ -108,7 +109,7 @@ class IObject extends pixi_js_1.Container {
         }
         sprite.loop = true;
         sprite.play();
-        sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
+        sprite.animationSpeed = speed * exports.DEFAULT_ANIMATION_SPEED;
         return this;
     }
     stop() {

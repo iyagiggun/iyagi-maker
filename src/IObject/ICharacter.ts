@@ -3,7 +3,7 @@ import {
   Assets,
   Sprite, Texture,
 } from 'pixi.js';
-import IObject, { ISpriteMap } from '.';
+import IObject, { DEFAULT_ANIMATION_SPEED, ISpriteMap } from '.';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 
 export type PhotoMap = {
@@ -46,7 +46,7 @@ export default class ICharacter extends IObject {
    * @param actionSpriteKey
    * @returns
    */
-  public do(actionSpriteKey: string) {
+  public do(actionSpriteKey: string, speed = 1) {
     return new Promise<boolean>((resolve, reject) => {
       if (this.doing) {
         resolve(false);
@@ -72,6 +72,7 @@ export default class ICharacter extends IObject {
           resolve(true);
         };
         sprite.loop = false;
+        sprite.animationSpeed = speed * DEFAULT_ANIMATION_SPEED;
         sprite.gotoAndPlay(0);
         sprite.onComplete = onComplete;
       } catch (e) {
