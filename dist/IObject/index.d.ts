@@ -28,7 +28,12 @@ export default class IObject extends Container {
     setPos([x, y]: IPos): this;
     getDirection(): Direction;
     setDirection(nextDir: Direction): this;
-    play(acc?: number, playPosition?: number): this;
+    /**
+     * loop animation
+     * @param acc
+     * @returns
+     */
+    play(acc?: number): this;
     stop(): this;
     getCenterPos(): number[];
     change(spriteKey: string): void;

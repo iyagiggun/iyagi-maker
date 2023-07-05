@@ -12,6 +12,11 @@ export default class ICharacter extends IObject {
     constructor(name: string, iSpriteMap: ISpriteMap, photoMap?: PhotoMap | undefined);
     load(): Promise<void>;
     getPhoto(): Sprite;
-    do(actionSpriteKey: string): void;
+    /**
+     * not loop animation
+     * @param actionSpriteKey
+     * @returns
+     */
+    do(actionSpriteKey: string): Promise<boolean>;
     isDoing(): boolean;
 }

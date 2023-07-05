@@ -93,19 +93,21 @@ class IObject extends pixi_js_1.Container {
         this.addChild(nextSprite);
         return this;
     }
-    play(acc = 1, playPosition) {
+    /**
+     * loop animation
+     * @param acc
+     * @returns
+     */
+    play(acc = 1) {
         const sprite = this.getSprite();
         if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
             throw new Error('[IObject.play] Not an animation.');
         }
-        if (!sprite.playing) {
-            if (playPosition === undefined) {
-                sprite.play();
-            }
-            else {
-                sprite.gotoAndPlay(playPosition);
-            }
+        if (sprite.playing) {
+            return this;
         }
+        sprite.loop = true;
+        sprite.play();
         sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
         return this;
     }

@@ -41,34 +41,44 @@ export default class ICharacter extends IObject {
     return this.photo;
   }
 
+  /**
+   * not loop animation
+   * @param actionSpriteKey
+   * @returns
+   */
   public do(actionSpriteKey: string) {
-    if (this.doing) {
-      return;
-    }
-    this.doing = true;
-    const lastSpriteKey = Object.keys(this.iSpriteMap).find((key) => this.iSprite === this.iSpriteMap[key]);
-    if (!lastSpriteKey) {
-      throw new Error('ICharacter.do] Fail to find last sprite key.');
-    }
-    try {
-      this.change(actionSpriteKey);
-      const sprite = this.getSprite();
-      if (!(sprite instanceof AnimatedSprite)) {
-        throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+    return new Promise<boolean>((resolve, reject) => {
+      if (this.doing) {
+        resolve(false);
+        return;
       }
-      const onComplete = () => {
+      this.doing = true;
+
+      const lastSpriteKey = Object.keys(this.iSpriteMap).find((key) => this.iSprite === this.iSpriteMap[key]);
+      if (!lastSpriteKey) {
+        reject(new Error('ICharacter.do] Fail to find last sprite key.'));
+        return;
+      }
+      try {
+        this.change(actionSpriteKey);
+        const sprite = this.getSprite();
+        if (!(sprite instanceof AnimatedSprite)) {
+          throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+        }
+        const onComplete = () => {
+          this.change(lastSpriteKey);
+          this.doing = false;
+          sprite.onComplete = undefined;
+          resolve(true);
+        };
+        sprite.loop = false;
+        sprite.gotoAndPlay(0);
+        sprite.onComplete = onComplete;
+      } catch (e) {
+        reject(e);
         this.change(lastSpriteKey);
-        this.doing = false;
-        sprite.onComplete = undefined;
-      };
-      sprite.loop = false;
-      sprite.gotoAndPlay(0);
-      sprite.onComplete = onComplete;
-    } catch (e) {
-      console.error(11);
-      this.change(lastSpriteKey);
-      throw e;
-    }
+      }
+    });
   }
 
   public isDoing() {

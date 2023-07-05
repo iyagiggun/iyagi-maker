@@ -127,18 +127,21 @@ export default class IObject extends Container {
     return this;
   }
 
-  public play(acc = 1, playPosition?: number) {
+  /**
+   * loop animation
+   * @param acc
+   * @returns
+   */
+  public play(acc = 1) {
     const sprite = this.getSprite();
     if (!(sprite instanceof AnimatedSprite)) {
       throw new Error('[IObject.play] Not an animation.');
     }
-    if (!sprite.playing) {
-      if (playPosition === undefined) {
-        sprite.play();
-      } else {
-        sprite.gotoAndPlay(playPosition);
-      }
+    if (sprite.playing) {
+      return this;
     }
+    sprite.loop = true;
+    sprite.play();
     sprite.animationSpeed = acc * DEFAULT_ANIMATION_SPEED;
     return this;
   }
