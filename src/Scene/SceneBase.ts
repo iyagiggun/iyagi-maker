@@ -5,32 +5,10 @@ export type EventType = 'start';
 class SceneBase extends EventTarget {
   protected container: Container;
 
-  protected app: Application | null = null;
-
-  constructor(protected name: string) {
+  constructor(protected app: Application, protected name: string) {
     super();
     this.container = new Container();
     this.container.sortableChildren = true;
-  }
-
-  protected getApplication() {
-    if (!this.app) {
-      throw new Error(`[scene: ${this.name}] no application.`);
-    }
-    return this.app;
-  }
-
-  public detach() {
-    this.getApplication().stage.removeChild(this.container);
-    this.app = null;
-  }
-
-  public attachAt(app: Application) {
-    if (this.app) {
-      this.detach();
-    }
-    this.app = app;
-    this.app.stage.addChild(this.container);
   }
 
   public addEventListener(type: EventType, callback: () => void) {
@@ -40,6 +18,10 @@ class SceneBase extends EventTarget {
   public dispatchEvent(event: CustomEvent) {
     super.dispatchEvent(event);
     return true;
+  }
+
+  public getContainer() {
+    return this.container;
   }
 
   // eslint-disable-next-line class-methods-use-this

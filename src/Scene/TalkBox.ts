@@ -1,7 +1,7 @@
 import {
   Graphics, Sprite, Text, TextStyle,
 } from 'pixi.js';
-import ICharacter from '../IObject/ICharacter';
+import Character from '../Obj/Character';
 
 const STYLE_NAME = new TextStyle({
   fontSize: 24,
@@ -20,7 +20,7 @@ const getMessageStyle = (width: number) => new TextStyle({
 
 // eslint-disable-next-line import/prefer-default-export
 export const getTalkBox = (
-  speaker: ICharacter,
+  speaker: Character,
   message: string,
   { width, height }: { width: number, height: number },
 ) => {
@@ -39,7 +39,7 @@ export const getTalkBox = (
   photo.y = talkBox.height - photoSize - 12;
   talkBox.addChild(photo);
 
-  const nameText = new Text(speaker.name, STYLE_NAME);
+  const nameText = new Text(speaker.getName(), STYLE_NAME);
   nameText.x = photo.x + photo.width + 12;
   nameText.y = 6;
   talkBox.addChild(nameText);

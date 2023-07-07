@@ -27,7 +27,7 @@ const pixi_js_1 = require("pixi.js");
 const _1 = __importStar(require("."));
 const Constant_1 = require("../Constant");
 const DEFAULT_PHOTO_INFO = { default: Constant_1.TRANSPARENT_1PX_IMG };
-class ICharacter extends _1.default {
+class Character extends _1.default {
     constructor(name, iSpriteMap, photoMap) {
         super(name, iSpriteMap);
         this.photoMap = photoMap;
@@ -67,7 +67,7 @@ class ICharacter extends _1.default {
                 this.change(actionSpriteKey);
                 const sprite = this.getSprite();
                 if (!(sprite instanceof pixi_js_1.AnimatedSprite)) {
-                    throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+                    throw new Error(`[ICharacter.do] The action is not animated. "${this.getName()}". ${actionSpriteKey}`);
                 }
                 const onComplete = () => {
                     this.change(lastSpriteKey);
@@ -90,4 +90,4 @@ class ICharacter extends _1.default {
         return this.doing;
     }
 }
-exports.default = ICharacter;
+exports.default = Character;

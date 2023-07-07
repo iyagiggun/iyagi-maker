@@ -1,50 +1,46 @@
-import IObject from '../IObject';
+import Obj from '../Obj';
 import { Coords, isIntersecting } from '../Utils/Coordinate';
 import SceneBase from './SceneBase';
 
 export type EventType = 'start';
 
 class SceneObjectManager extends SceneBase {
-  protected objectList: IObject[];
-
-  constructor(name: string, objectList: IObject[]) {
-    super(name);
-    this.objectList = [...objectList];
-  }
+  protected objectList: Obj[] = [];
 
   public load() {
     return Promise.all(this.objectList.map((obj) => obj.load()));
   }
 
   public draw() {
-    const drawnList = this.container.children;
     this.objectList
-      .filter((obj) => !drawnList.includes(obj))
       .forEach((obj) => {
-        this.container.addChild(obj);
+        this.container.addChild(obj.getContainer());
       });
   }
 
-  public addObject(obj: IObject) {
-    if (!obj.isLoaded()) {
-      throw new Error(`Fail to add object. ${obj.name} is not loaded.`);
-    }
+  public addObject(obj: Obj) {
     if (this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
+      throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
     }
     this.objectList.push(obj);
-    this.container.addChild(obj);
+    this.container.addChild(obj.getContainer());
+    return this;
   }
 
-  public removeObject(obj: IObject) {
+  public addObjectList(objList: Obj[]) {
+    objList.forEach((obj) => this.addObject(obj));
+    return this;
+  }
+
+  public removeObject(obj: Obj) {
     if (!this.objectList.includes(obj)) {
-      throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
+      throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
     }
     this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-    this.container.removeChild(obj);
+    this.container.removeChild(obj.getContainer());
   }
 
-  protected getObjectNextX(target: IObject, dist: number) {
+  protected getObjectNextX(target: Obj, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();
@@ -66,7 +62,7 @@ class SceneObjectManager extends SceneBase {
     return nextX;
   }
 
-  protected getObjectNextY(target: IObject, dist: number) {
+  protected getObjectNextY(target: Obj, dist: number) {
     const [curX, curY] = target.getPos();
     const width = target.getWidth();
     const height = target.getHeight();

@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const SceneController_1 = __importDefault(require("./SceneController"));
-class IScene extends SceneController_1.default {
+class Scene extends SceneController_1.default {
     constructor() {
         super(...arguments);
         this.status = 'idle';
     }
 }
-exports.default = IScene;
+exports.default = Scene;

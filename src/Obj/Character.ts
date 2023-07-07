@@ -3,7 +3,7 @@ import {
   Assets,
   Sprite, Texture,
 } from 'pixi.js';
-import IObject, { DEFAULT_ANIMATION_SPEED, ISpriteMap } from '.';
+import Obj, { DEFAULT_ANIMATION_SPEED, ISpriteMap } from '.';
 import { TRANSPARENT_1PX_IMG } from '../Constant';
 
 export type PhotoMap = {
@@ -13,7 +13,7 @@ export type PhotoMap = {
 
 const DEFAULT_PHOTO_INFO = { default: TRANSPARENT_1PX_IMG };
 
-export default class ICharacter extends IObject {
+export default class Character extends Obj {
   private photo: Sprite;
 
   private doing = false;
@@ -63,7 +63,7 @@ export default class ICharacter extends IObject {
         this.change(actionSpriteKey);
         const sprite = this.getSprite();
         if (!(sprite instanceof AnimatedSprite)) {
-          throw new Error(`[ICharacter.do] The action is not animated. "${this.name}". ${actionSpriteKey}`);
+          throw new Error(`[ICharacter.do] The action is not animated. "${this.getName()}". ${actionSpriteKey}`);
         }
         const onComplete = () => {
           this.change(lastSpriteKey);

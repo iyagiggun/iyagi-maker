@@ -1,4 +1,4 @@
 import SceneController from './SceneController';
-export default class IScene extends SceneController {
+export default class Scene extends SceneController {
     private status;
 }

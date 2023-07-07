@@ -1,10 +1,9 @@
+import { Application } from 'pixi.js';
 import IScene from '../Scene';
 declare class Iyagi {
     private app;
     private currentScene?;
-    private width;
-    private height;
-    constructor(canvas: HTMLCanvasElement);
+    constructor(app: Application);
     play(scene: IScene): Promise<void>;
 }
 export default Iyagi;

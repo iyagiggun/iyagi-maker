@@ -8,14 +8,18 @@ export declare type ISpriteMap = {
     [key: string]: ISprite;
 };
 export declare const DEFAULT_ANIMATION_SPEED: number;
-export default class IObject extends Container {
+export default class Obj extends EventTarget {
+    protected name: string;
     protected iSpriteMap: ISpriteMap;
+    protected container: Container;
     protected loaded: boolean;
     protected iSprite: ISprite;
     private dir;
-    private iZIndex;
+    private zIndex;
     reaction?: () => Promise<void>;
     constructor(name: string, iSpriteMap: ISpriteMap);
+    getName(): string;
+    getContainer(): Container<import("pixi.js").DisplayObject>;
     load(): Promise<void>;
     isLoaded(): boolean;
     getSprite(): import("pixi.js").Sprite;

@@ -1,10 +1,10 @@
 import { Sprite } from 'pixi.js';
-import IObject, { ISpriteMap } from '.';
+import Obj, { ISpriteMap } from '.';
 export declare type PhotoMap = {
     default: string;
     [key: string]: string;
 };
-export default class ICharacter extends IObject {
+export default class Character extends Obj {
     private photoMap?;
     private photo;
     private doing;

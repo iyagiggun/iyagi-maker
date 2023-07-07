@@ -1,9 +1,9 @@
-import IObject from '../IObject';
-import ICharacter from '../IObject/ICharacter';
-import IScene from '../Scene';
+import Obj from '../Obj';
+import Character from '../Obj/Character';
+import Scene from '../Scene';
 import { getDistance } from '../Utils/Coordinate';
 
-export const getCoordinateRelationship = (self: IObject, target: IObject) => {
+export const getCoordinateRelationship = (self: Obj, target: Obj) => {
   const [x, y] = self.getCenterPos();
   const halfWidth = self.getWidth() / 2;
   const halfHeight = self.getHeight() / 2;
@@ -47,7 +47,7 @@ export const getCoordinateRelationship = (self: IObject, target: IObject) => {
   };
 };
 
-const findShortestPos = (attacker: ICharacter, target: ICharacter) => {
+const findShortestPos = (attacker: Character, target: Character) => {
   const attackerPos = attacker.getPos();
   const [tCX, tCY] = target.getPos();
   const tWidth = target.getWidth();
@@ -69,9 +69,9 @@ const findShortestPos = (attacker: ICharacter, target: ICharacter) => {
 };
 
 const IBasicTracking = (
-  scene: IScene,
-  tracker: ICharacter,
-  target: ICharacter,
+  scene: Scene,
+  tracker: Character,
+  target: Character,
   onArrived?: () => void,
   interval = 250,
 ) => {

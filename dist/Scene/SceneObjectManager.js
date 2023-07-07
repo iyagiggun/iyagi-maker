@@ -6,37 +6,37 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Coordinate_1 = require("../Utils/Coordinate");
 const SceneBase_1 = __importDefault(require("./SceneBase"));
 class SceneObjectManager extends SceneBase_1.default {
-    constructor(name, objectList) {
-        super(name);
-        this.objectList = [...objectList];
+    constructor() {
+        super(...arguments);
+        this.objectList = [];
     }
     load() {
         return Promise.all(this.objectList.map((obj) => obj.load()));
     }
     draw() {
-        const drawnList = this.container.children;
         this.objectList
-            .filter((obj) => !drawnList.includes(obj))
             .forEach((obj) => {
-            this.container.addChild(obj);
+            this.container.addChild(obj.getContainer());
         });
     }
     addObject(obj) {
-        if (!obj.isLoaded()) {
-            throw new Error(`Fail to add object. ${obj.name} is not loaded.`);
-        }
         if (this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.name} is already in ${this.name}`);
+            throw new Error(`Fail to add object. ${obj.getName()} is already in ${this.name}`);
         }
         this.objectList.push(obj);
-        this.container.addChild(obj);
+        this.container.addChild(obj.getContainer());
+        return this;
+    }
+    addObjectList(objList) {
+        objList.forEach((obj) => this.addObject(obj));
+        return this;
     }
     removeObject(obj) {
         if (!this.objectList.includes(obj)) {
-            throw new Error(`Fail to add object. ${obj.name} is not in ${this.name}`);
+            throw new Error(`Fail to add object. ${obj.getName()} is not in ${this.name}`);
         }
         this.objectList = this.objectList.filter((_obj) => _obj !== obj);
-        this.container.removeChild(obj);
+        this.container.removeChild(obj.getContainer());
     }
     getObjectNextX(target, dist) {
         const [curX, curY] = target.getPos();

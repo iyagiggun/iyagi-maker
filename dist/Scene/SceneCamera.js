@@ -7,10 +7,10 @@ const SceneObjectManager_1 = __importDefault(require("./SceneObjectManager"));
 class SceneCamera extends SceneObjectManager_1.default {
     getCameraPos(target) {
         if (!this.objectList.includes(target)) {
-            throw new Error(`Fail to focus. ${target.name}. no the target in scene "${this.name}".`);
+            throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
         }
         const [targetCenterX, targetCenterY] = target.getCenterPos();
-        const { width: appWidth, height: appHeight } = this.getApplication().view;
+        const { width: appWidth, height: appHeight } = this.app.view;
         const destX = Math.round((appWidth / 2) - targetCenterX);
         const destY = Math.round((appHeight / 2) - targetCenterY);
         return [destX, destY];
@@ -19,7 +19,7 @@ class SceneCamera extends SceneObjectManager_1.default {
         return new Promise((resolve) => {
             const [destX, destY] = this.getCameraPos(target);
             const cameraSpeed = speed * 2;
-            const { ticker } = this.getApplication();
+            const { ticker } = this.app;
             const tick = () => {
                 const curX = this.container.x;
                 const curY = this.container.y;

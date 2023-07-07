@@ -23,7 +23,7 @@ class SceneController extends SceneCamera_1.default {
     }
     control(player, mode) {
         if (!this.controller) {
-            const { width: appWidth, height: appHeight } = this.getApplication().view;
+            const { width: appWidth, height: appHeight } = this.app.view;
             let joystickId;
             let [startX, startY] = [0, 0];
             let [deltaX, deltaY] = [0, 0];
@@ -31,7 +31,7 @@ class SceneController extends SceneCamera_1.default {
             this.controller = controller;
             this.controller.width = appWidth;
             this.controller.height = appHeight;
-            const { ticker } = this.getApplication();
+            const { ticker } = this.app;
             const tick = () => {
                 const nextX = this.getObjectNextX(player, deltaX);
                 const nextY = this.getObjectNextY(player, deltaY);
@@ -147,7 +147,7 @@ class SceneController extends SceneCamera_1.default {
     talk(speaker, message) {
         const { player } = this;
         return new Promise((resolve) => {
-            const app = this.getApplication();
+            const { app } = this;
             const { talkBox, talkEndPromise } = (0, TalkBox_1.getTalkBox)(speaker, message, app.view);
             app.stage.addChild(talkBox);
             talkEndPromise.then(() => {
@@ -165,7 +165,7 @@ class SceneController extends SceneCamera_1.default {
                 resolve();
                 return;
             }
-            const { ticker } = this.getApplication();
+            const { ticker } = this.app;
             const tick = () => {
                 const [curX, curY] = target.getPos();
                 const diffX = destX - curX;

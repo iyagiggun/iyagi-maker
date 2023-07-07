@@ -1,10 +1,10 @@
-import IObject from '../IObject';
-import ICharacter from '../IObject/ICharacter';
-import IScene from '../Scene';
-export declare const getCoordinateRelationship: (self: IObject, target: IObject) => {
+import Obj from '../Obj';
+import Character from '../Obj/Character';
+import Scene from '../Scene';
+export declare const getCoordinateRelationship: (self: Obj, target: Obj) => {
     distance: number;
     xDiff: number;
     yDiff: number;
 };
-declare const IBasicTracking: (scene: IScene, tracker: ICharacter, target: ICharacter, onArrived?: () => void, interval?: number) => void;
+declare const IBasicTracking: (scene: Scene, tracker: Character, target: Character, onArrived?: () => void, interval?: number) => void;
 export default IBasicTracking;

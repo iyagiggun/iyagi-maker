@@ -22,26 +22,36 @@ export type ISpriteMap = {
 const Z_INDEX_MOD = 10000;
 export const DEFAULT_ANIMATION_SPEED = 6 / FRAMES_PER_SECOND; // 10 fps
 
-export default class IObject extends Container {
+export default class Obj extends EventTarget {
+  protected container: Container;
+
   protected loaded = false;
 
   protected iSprite: ISprite;
 
   private dir: Direction = 'down';
 
-  private iZIndex = 1;
+  private zIndex = 1;
 
   public reaction?: () => Promise<void>;
 
-  constructor(name: string, protected iSpriteMap: ISpriteMap) {
+  constructor(protected name: string, protected iSpriteMap: ISpriteMap) {
     super();
-    this.name = name;
+    this.container = new Container();
     this.iSprite = this.iSpriteMap.default;
+  }
+
+  public getName() {
+    return this.name;
+  }
+
+  public getContainer() {
+    return this.container;
   }
 
   public async load() {
     await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
-    this.addChild(this.getSprite());
+    this.container.addChild(this.getSprite());
     this.loaded = true;
   }
 
@@ -80,26 +90,26 @@ export default class IObject extends Container {
   }
 
   public getZIndex() {
-    return this.iZIndex;
+    return this.zIndex;
   }
 
   public setZIndex(zIndex: number) {
-    this.iZIndex = zIndex;
+    this.zIndex = zIndex;
     const [, y] = this.getPos();
-    this.zIndex = this.iZIndex * Z_INDEX_MOD + y;
+    this.container.zIndex = this.zIndex * Z_INDEX_MOD + y;
     return this;
   }
 
   public getPos(): IPos {
     const [modX, modY] = this.getCollisionMod();
-    return [this.x + modX, this.y + modY];
+    return [this.container.x + modX, this.container.y + modY];
   }
 
   public setPos([x, y]: IPos) {
     const [modX, modY] = this.getCollisionMod();
-    this.x = x - modX;
-    this.y = y - modY;
-    this.setZIndex(this.iZIndex);
+    this.container.x = x - modX;
+    this.container.y = y - modY;
+    this.setZIndex(this.zIndex);
     return this;
   }
 
@@ -122,8 +132,8 @@ export default class IObject extends Container {
     if (curSprite instanceof AnimatedSprite) {
       this.stop();
     }
-    this.removeChild(curSprite);
-    this.addChild(nextSprite);
+    this.container.removeChild(curSprite);
+    this.container.addChild(nextSprite);
     return this;
   }
 
@@ -168,11 +178,11 @@ export default class IObject extends Container {
     if (!nextSprite) {
       throw new Error('[IObject.change] No the sprite.');
     }
-    this.removeChild(this.getSprite());
+    this.container.removeChild(this.getSprite());
     this.stop();
 
     this.iSprite = nextSprite;
-    this.addChild(this.iSprite.getSprite(this.dir));
+    this.container.addChild(this.iSprite.getSprite(this.dir));
     const lastSprite = this.getSprite();
     if (lastSprite instanceof AnimatedSprite) {
       this.stop();

@@ -1,8 +1,9 @@
+import { Application, Graphics } from 'pixi.js';
 import IBasicTracking from './AI/BasicTracking';
-import IObject from './IObject';
-import ICharacter from './IObject/ICharacter';
-import ISprite from './IObject/ISprite';
+import Obj from './Obj';
+import ISprite from './Obj/ISprite';
 import Iyagi from './Iyagi';
-import IScene from './Scene';
-export { IBasicTracking, IScene, ISprite, IObject, ICharacter, };
+import Scene from './Scene';
+import Character from './Obj/Character';
+export { Application, IBasicTracking, Scene, ISprite, Obj, Character, Graphics, };
 export default Iyagi;

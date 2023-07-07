@@ -4,7 +4,7 @@ import { TRANSPARENT_1PX_IMG } from '../Constant';
 import { getAcc } from '../Utils/Coordinate';
 import SceneCamera from './SceneCamera';
 import { getTalkBox } from './TalkBox';
-import ICharacter from '../IObject/ICharacter';
+import Character from '../Obj/Character';
 
 type ControlMode = 'battle' | 'peace';
 
@@ -20,13 +20,13 @@ const getDirection = (deltaX: number, deltaY: number) => {
 export default class SceneController extends SceneCamera {
   private controlMode: ControlMode = 'peace';
 
-  private player?: ICharacter;
+  private player?: Character;
 
   private controller?: Sprite;
 
-  public control(player: ICharacter, mode: ControlMode) {
+  public control(player: Character, mode: ControlMode) {
     if (!this.controller) {
-      const { width: appWidth, height: appHeight } = this.getApplication().view;
+      const { width: appWidth, height: appHeight } = this.app.view;
       let joystickId: undefined | number;
       let [startX, startY] = [0, 0];
       let [deltaX, deltaY] = [0, 0];
@@ -36,7 +36,7 @@ export default class SceneController extends SceneCamera {
       this.controller.width = appWidth;
       this.controller.height = appHeight;
 
-      const { ticker } = this.getApplication();
+      const { ticker } = this.app;
       const tick = () => {
         const nextX = this.getObjectNextX(player, deltaX);
         const nextY = this.getObjectNextY(player, deltaY);
@@ -164,10 +164,10 @@ export default class SceneController extends SceneCamera {
     return target.reaction;
   }
 
-  public talk(speaker: ICharacter, message: string) {
+  public talk(speaker: Character, message: string) {
     const { player } = this;
     return new Promise<void>((resolve) => {
-      const app = this.getApplication();
+      const { app } = this;
       const { talkBox, talkEndPromise } = getTalkBox(speaker, message, app.view);
 
       app.stage.addChild(talkBox);
@@ -182,7 +182,7 @@ export default class SceneController extends SceneCamera {
   }
 
   public moveCharacter(
-    target: ICharacter,
+    target: Character,
     [destX, destY]: [number, number],
     speed: number,
     chaseCamera: boolean,
@@ -192,7 +192,7 @@ export default class SceneController extends SceneCamera {
         resolve();
         return;
       }
-      const { ticker } = this.getApplication();
+      const { ticker } = this.app;
 
       const tick = () => {
         const [curX, curY] = target.getPos();

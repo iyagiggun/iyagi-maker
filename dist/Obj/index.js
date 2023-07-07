@@ -9,19 +9,26 @@ const Constant_1 = require("../Constant");
  */
 const Z_INDEX_MOD = 10000;
 exports.DEFAULT_ANIMATION_SPEED = 6 / Constant_1.FRAMES_PER_SECOND; // 10 fps
-class IObject extends pixi_js_1.Container {
+class Obj extends EventTarget {
     constructor(name, iSpriteMap) {
         super();
+        this.name = name;
         this.iSpriteMap = iSpriteMap;
         this.loaded = false;
         this.dir = 'down';
-        this.iZIndex = 1;
-        this.name = name;
+        this.zIndex = 1;
+        this.container = new pixi_js_1.Container();
         this.iSprite = this.iSpriteMap.default;
+    }
+    getName() {
+        return this.name;
+    }
+    getContainer() {
+        return this.container;
     }
     async load() {
         await Promise.all(Object.values(this.iSpriteMap).map((iSprite) => iSprite.load()));
-        this.addChild(this.getSprite());
+        this.container.addChild(this.getSprite());
         this.loaded = true;
     }
     isLoaded() {
@@ -53,23 +60,23 @@ class IObject extends pixi_js_1.Container {
         return this.getCollisionMod()[3];
     }
     getZIndex() {
-        return this.iZIndex;
+        return this.zIndex;
     }
     setZIndex(zIndex) {
-        this.iZIndex = zIndex;
+        this.zIndex = zIndex;
         const [, y] = this.getPos();
-        this.zIndex = this.iZIndex * Z_INDEX_MOD + y;
+        this.container.zIndex = this.zIndex * Z_INDEX_MOD + y;
         return this;
     }
     getPos() {
         const [modX, modY] = this.getCollisionMod();
-        return [this.x + modX, this.y + modY];
+        return [this.container.x + modX, this.container.y + modY];
     }
     setPos([x, y]) {
         const [modX, modY] = this.getCollisionMod();
-        this.x = x - modX;
-        this.y = y - modY;
-        this.setZIndex(this.iZIndex);
+        this.container.x = x - modX;
+        this.container.y = y - modY;
+        this.setZIndex(this.zIndex);
         return this;
     }
     getDirection() {
@@ -90,8 +97,8 @@ class IObject extends pixi_js_1.Container {
         if (curSprite instanceof pixi_js_1.AnimatedSprite) {
             this.stop();
         }
-        this.removeChild(curSprite);
-        this.addChild(nextSprite);
+        this.container.removeChild(curSprite);
+        this.container.addChild(nextSprite);
         return this;
     }
     /**
@@ -132,14 +139,14 @@ class IObject extends pixi_js_1.Container {
         if (!nextSprite) {
             throw new Error('[IObject.change] No the sprite.');
         }
-        this.removeChild(this.getSprite());
+        this.container.removeChild(this.getSprite());
         this.stop();
         this.iSprite = nextSprite;
-        this.addChild(this.iSprite.getSprite(this.dir));
+        this.container.addChild(this.iSprite.getSprite(this.dir));
         const lastSprite = this.getSprite();
         if (lastSprite instanceof pixi_js_1.AnimatedSprite) {
             this.stop();
         }
     }
 }
-exports.default = IObject;
+exports.default = Obj;

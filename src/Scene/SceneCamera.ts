@@ -1,24 +1,24 @@
-import IObject from '../IObject';
+import Obj from '../Obj';
 import SceneObjectManager from './SceneObjectManager';
 
 export default class SceneCamera extends SceneObjectManager {
-  protected getCameraPos(target: IObject) {
+  protected getCameraPos(target: Obj) {
     if (!this.objectList.includes(target)) {
-      throw new Error(`Fail to focus. ${target.name}. no the target in scene "${this.name}".`);
+      throw new Error(`Fail to focus. ${target.getName()}. no the target in scene "${this.name}".`);
     }
     const [targetCenterX, targetCenterY] = target.getCenterPos();
-    const { width: appWidth, height: appHeight } = this.getApplication().view;
+    const { width: appWidth, height: appHeight } = this.app.view;
     const destX = Math.round((appWidth / 2) - targetCenterX);
     const destY = Math.round((appHeight / 2) - targetCenterY);
     return [destX, destY];
   }
 
-  public async moveCamera(target: IObject, speed = Infinity) {
+  public async moveCamera(target: Obj, speed = Infinity) {
     return new Promise<void>((resolve) => {
       const [destX, destY] = this.getCameraPos(target);
       const cameraSpeed = speed * 2;
 
-      const { ticker } = this.getApplication();
+      const { ticker } = this.app;
       const tick = () => {
         const curX = this.container.x;
         const curY = this.container.y;
